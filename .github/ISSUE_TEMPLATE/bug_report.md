@@ -1,49 +1,38 @@
-# Automatically closes pull requests opened by anyone other than the
-# repository owner, per the no-code-contributions policy in CONTRIBUTING.md.
-#
-# Uses pull_request_target so the workflow has a write-capable token for
-# PRs from forks. This is safe here because the workflow never checks out
-# or executes any code from the PR - it only comments on and closes the
-# PR object via the GitHub API.
+---
+name: Bug report
+about: Create a report to help us improve
+title: ''
+labels: ''
+assignees: ''
 
-name: Close external pull requests
+---
 
-on:
-  pull_request_target:
-    types: [opened, reopened]
+**Describe the bug**
+A clear and concise description of what the bug is.
 
-permissions:
-  pull-requests: write
+**To Reproduce**
+Steps to reproduce the behavior:
+1. Go to '...'
+2. Click on '....'
+3. Scroll down to '....'
+4. See error
 
-jobs:
-  close:
-    # Skip entirely when the PR author is the repository owner
-    if: github.event.pull_request.user.login != github.repository_owner
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/github-script@v7
-        with:
-          script: |
-            const pr = context.payload.pull_request.number;
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: pr,
-              body: [
-                "Thanks for your interest in this project. Per the policy in",
-                "[CONTRIBUTING.md](../blob/main/CONTRIBUTING.md), pull requests",
-                "are not accepted - this is a maintenance-model decision, not a",
-                "judgment of your work.",
-                "",
-                "If you've found a bug or have a feature idea, please",
-                "[open an issue](../issues) instead - issues are genuinely welcome.",
-                "",
-                "_This pull request was closed automatically._"
-              ].join("\n")
-            });
-            await github.rest.pulls.update({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: pr,
-              state: "closed"
-            });
+**Expected behavior**
+A clear and concise description of what you expected to happen.
+
+**Screenshots**
+If applicable, add screenshots to help explain your problem.
+
+**Desktop (please complete the following information):**
+ - OS: [e.g. iOS]
+ - Browser [e.g. chrome, safari]
+ - Version [e.g. 22]
+
+**Smartphone (please complete the following information):**
+ - Device: [e.g. iPhone6]
+ - OS: [e.g. iOS8.1]
+ - Browser [e.g. stock browser, safari]
+ - Version [e.g. 22]
+
+**Additional context**
+Add any other context about the problem here.
