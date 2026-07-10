@@ -1,0 +1,6 @@
+# GitHub funding configuration - renders the "Sponsor" button on the repo.
+# Must live at .github/FUNDING.yml on the default branch.
+# Replace BMC-USERNAME with your Buy Me a Coffee page slug
+# (the part after buymeacoffee.com/ in your page URL).
+
+buy_me_a_coffee: mchristegh
