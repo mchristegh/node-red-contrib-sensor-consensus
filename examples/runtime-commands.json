@@ -1,0 +1,446 @@
+[
+    {
+        "id": "c-0017",
+        "type": "comment",
+        "name": "Runtime commands",
+        "info": "Every aspect of the node can be driven at runtime with case-insensitive commands in `msg.payload`. Invalid or out-of-place commands are never silently dropped — they appear on output 4 with `ignored: true` and the attempted value attached.\n\n**Try this sequence:**\n1. Press sensorA = 58 and sensorB = 59 — mean 58.5, untriggered.\n2. Press disable, then sensorA = 66 (mean 62.5) — the warranted Trigger is *suppressed*: output 4 shows `triggered` with `ignored: true`, and output 1 stays silent. Readings are still accepted while disabled — only decisions are frozen.\n3. Press enable — the suppressed transition fires genuinely NOW on outputs 1 + 4.\n4. Press settrigger 70 — with no distinct release configured at runtime, the release follows the trigger. Set-commands re-evaluate immediately: mean 62.5 < 70, so **Release** fires at once.\n5. Press setrelease 65, then try settrigger 50 — rejected (`ignored: true`): 50 is on the wrong side of the now-distinct release 65. Thresholds guard each other symmetrically.\n6. Press setstale 30s — sources now expire after 30 seconds of silence; wait it out and watch output 4.\n7. Press remove sensorA — drops a decommissioned sensor and re-evaluates; press reset to clear everything back to `waiting` (runtime threshold overrides survive a reset — reset clears data, not configuration).",
+        "x": 150,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "i-0018",
+        "type": "inject",
+        "name": "sensorA = 58",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "sensorA",
+        "payload": "58",
+        "payloadType": "num",
+        "x": 170,
+        "y": 260,
+        "wires": [
+            [
+                "sc-0016"
+            ]
+        ]
+    },
+    {
+        "id": "i-0019",
+        "type": "inject",
+        "name": "sensorB = 59",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "sensorB",
+        "payload": "59",
+        "payloadType": "num",
+        "x": 170,
+        "y": 320,
+        "wires": [
+            [
+                "sc-0016"
+            ]
+        ]
+    },
+    {
+        "id": "i-001a",
+        "type": "inject",
+        "name": "sensorA = 66",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "sensorA",
+        "payload": "66",
+        "payloadType": "num",
+        "x": 170,
+        "y": 380,
+        "wires": [
+            [
+                "sc-0016"
+            ]
+        ]
+    },
+    {
+        "id": "i-001b",
+        "type": "inject",
+        "name": "disable",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "disable",
+        "payloadType": "str",
+        "x": 170,
+        "y": 440,
+        "wires": [
+            [
+                "sc-0016"
+            ]
+        ]
+    },
+    {
+        "id": "i-001c",
+        "type": "inject",
+        "name": "enable",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "enable",
+        "payloadType": "str",
+        "x": 170,
+        "y": 500,
+        "wires": [
+            [
+                "sc-0016"
+            ]
+        ]
+    },
+    {
+        "id": "i-001d",
+        "type": "inject",
+        "name": "settrigger 70",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "settrigger",
+                "v": "70",
+                "vt": "num"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "settrigger",
+        "payloadType": "str",
+        "x": 170,
+        "y": 560,
+        "wires": [
+            [
+                "sc-0016"
+            ]
+        ]
+    },
+    {
+        "id": "i-001e",
+        "type": "inject",
+        "name": "setrelease 65",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "setrelease",
+                "v": "65",
+                "vt": "num"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "setrelease",
+        "payloadType": "str",
+        "x": 170,
+        "y": 620,
+        "wires": [
+            [
+                "sc-0016"
+            ]
+        ]
+    },
+    {
+        "id": "i-001f",
+        "type": "inject",
+        "name": "settrigger 50 (rejected)",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "settrigger",
+                "v": "50",
+                "vt": "num"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "settrigger",
+        "payloadType": "str",
+        "x": 170,
+        "y": 680,
+        "wires": [
+            [
+                "sc-0016"
+            ]
+        ]
+    },
+    {
+        "id": "i-001g",
+        "type": "inject",
+        "name": "setstale 30s",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "setstale",
+                "v": "30",
+                "vt": "num"
+            },
+            {
+                "p": "setstaleunits",
+                "v": "seconds",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "setstale",
+        "payloadType": "str",
+        "x": 170,
+        "y": 740,
+        "wires": [
+            [
+                "sc-0016"
+            ]
+        ]
+    },
+    {
+        "id": "i-001h",
+        "type": "inject",
+        "name": "remove sensorA",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "removetopic",
+                "v": "sensorA",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "remove",
+        "payloadType": "str",
+        "x": 170,
+        "y": 800,
+        "wires": [
+            [
+                "sc-0016"
+            ]
+        ]
+    },
+    {
+        "id": "i-001i",
+        "type": "inject",
+        "name": "reset",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "reset",
+        "payloadType": "str",
+        "x": 170,
+        "y": 860,
+        "wires": [
+            [
+                "sc-0016"
+            ]
+        ]
+    },
+    {
+        "id": "i-001j",
+        "type": "inject",
+        "name": "query",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "query",
+        "payloadType": "str",
+        "x": 170,
+        "y": 920,
+        "wires": [
+            [
+                "sc-0016"
+            ]
+        ]
+    },
+    {
+        "id": "sc-0016",
+        "type": "sensor-consensus",
+        "name": "Consensus under command (mean ≥ 60, release < 55)",
+        "typemode": "numeric",
+        "aggregation": "mean",
+        "triggerdir": "above",
+        "triggervalue": "60",
+        "releasevalue": "55",
+        "boolrule": "majority",
+        "boolrulen": "1",
+        "boolreleaserule": "sameastrigger",
+        "boolreleasen": "1",
+        "truevalues": "",
+        "falsevalues": "",
+        "expectedsources": "",
+        "quorum": "0",
+        "stalewindow": "0",
+        "stalewindowunits": "Second",
+        "quorumlostpolicy": "hold",
+        "emitonchange": true,
+        "heartbeatinterval": "0",
+        "heartbeatintervalunits": "Second",
+        "persist": false,
+        "x": 520,
+        "y": 350,
+        "wires": [
+            [
+                "d-0012"
+            ],
+            [
+                "d-0013"
+            ],
+            [
+                "d-0014"
+            ],
+            [
+                "d-0015"
+            ]
+        ]
+    },
+    {
+        "id": "d-0012",
+        "type": "debug",
+        "name": "1 Trigger",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 820,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "d-0013",
+        "type": "debug",
+        "name": "2 Release",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 820,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "d-0014",
+        "type": "debug",
+        "name": "3 Query",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 820,
+        "y": 380,
+        "wires": []
+    },
+    {
+        "id": "d-0015",
+        "type": "debug",
+        "name": "4 Events",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 820,
+        "y": 440,
+        "wires": []
+    }
+]
