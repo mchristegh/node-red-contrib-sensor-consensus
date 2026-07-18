@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-sensor-consensus",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A Node-RED sensor-fusion / consensus node: fuses latest readings from multiple sensors into a single trusted aggregate with staleness windows, quorum, disagreement detection, and a latched threshold trigger. Purpose-built 4-output event model (Trigger / Release / Query / Events) shared with node-red-contrib-timer-events and node-red-contrib-timer-threshold.",
   "keywords": [
     "node-red",
