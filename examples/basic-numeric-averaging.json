@@ -1,280 +1,243 @@
 [
-    {
-        "id": "c-0006",
-        "type": "comment",
-        "name": "Basic numeric averaging",
-        "info": "Three humidity sensors averaged into one trusted value, triggering at mean ≥ 60% and releasing below 55% (hysteresis).\n\n**Try this sequence:**\n1. Press hum1 = 55, hum2 = 58, hum3 = 52 — each press shows `sourceadded` on output 4; mean settles at 55, below the trigger.\n2. Press hum2 = 75 — mean becomes 60.67: **Trigger** fires on output 1 (and a copy on output 4).\n3. Press hum2 = 45 — mean becomes 50.67, below the release value 55: **Release** fires on output 2 with `releaseReason: \"threshold\"`.\n4. Press query at any time for a full snapshot on output 3, including the per-source breakdown in `msg.sources`.\n\nOutputs 1 and 2 only ever carry genuine transitions — everything else, including every accepted reading's new aggregate, appears on output 4 (Events).",
-        "x": 150,
-        "y": 120,
-        "wires": []
-    },
-    {
-        "id": "i-0007",
-        "type": "inject",
-        "name": "hum1 = 55",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "hum1",
-        "payload": "55",
-        "payloadType": "num",
-        "x": 170,
-        "y": 200,
-        "wires": [
-            [
-                "sc-0005"
-            ]
-        ]
-    },
-    {
-        "id": "i-0008",
-        "type": "inject",
-        "name": "hum2 = 58",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "hum2",
-        "payload": "58",
-        "payloadType": "num",
-        "x": 170,
-        "y": 260,
-        "wires": [
-            [
-                "sc-0005"
-            ]
-        ]
-    },
-    {
-        "id": "i-0009",
-        "type": "inject",
-        "name": "hum3 = 52",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "hum3",
-        "payload": "52",
-        "payloadType": "num",
-        "x": 170,
-        "y": 320,
-        "wires": [
-            [
-                "sc-0005"
-            ]
-        ]
-    },
-    {
-        "id": "i-000a",
-        "type": "inject",
-        "name": "hum2 = 75 (trigger)",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "hum2",
-        "payload": "75",
-        "payloadType": "num",
-        "x": 170,
-        "y": 380,
-        "wires": [
-            [
-                "sc-0005"
-            ]
-        ]
-    },
-    {
-        "id": "i-000b",
-        "type": "inject",
-        "name": "hum2 = 45 (release)",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "hum2",
-        "payload": "45",
-        "payloadType": "num",
-        "x": 170,
-        "y": 440,
-        "wires": [
-            [
-                "sc-0005"
-            ]
-        ]
-    },
-    {
-        "id": "i-000c",
-        "type": "inject",
-        "name": "query",
-        "props": [
-            {
-                "p": "payload"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "query",
-        "payloadType": "str",
-        "x": 170,
-        "y": 500,
-        "wires": [
-            [
-                "sc-0005"
-            ]
-        ]
-    },
-    {
-        "id": "sc-0005",
-        "type": "sensor-consensus",
-        "name": "Humidity consensus (mean ≥ 60, release < 55)",
-        "typemode": "numeric",
-        "aggregation": "mean",
-        "triggerdir": "above",
-        "triggervalue": "60",
-        "releasevalue": "55",
-        "boolrule": "majority",
-        "boolrulen": "1",
-        "boolreleaserule": "sameastrigger",
-        "boolreleasen": "1",
-        "truevalues": "",
-        "falsevalues": "",
-        "expectedsources": "",
-        "quorum": "0",
-        "stalewindow": "0",
-        "stalewindowunits": "Second",
-        "quorumlostpolicy": "hold",
-        "emitonchange": true,
-        "heartbeatinterval": "0",
-        "heartbeatintervalunits": "Second",
-        "persist": false,
-        "x": 470,
-        "y": 290,
-        "wires": [
-            [
-                "d-0001"
-            ],
-            [
-                "d-0002"
-            ],
-            [
-                "d-0003"
-            ],
-            [
-                "d-0004"
-            ]
-        ]
-    },
-    {
-        "id": "d-0001",
-        "type": "debug",
-        "name": "1 Trigger",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 760,
-        "y": 200,
-        "wires": []
-    },
-    {
-        "id": "d-0002",
-        "type": "debug",
-        "name": "2 Release",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 760,
-        "y": 260,
-        "wires": []
-    },
-    {
-        "id": "d-0003",
-        "type": "debug",
-        "name": "3 Query",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 760,
-        "y": 320,
-        "wires": []
-    },
-    {
-        "id": "d-0004",
-        "type": "debug",
-        "name": "4 Events",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 760,
-        "y": 380,
-        "wires": []
-    }
+  {
+    "id": "c-0006",
+    "type": "comment",
+    "name": "Basic numeric averaging",
+    "info": "Three humidity sensors averaged into one trusted value, triggering at mean ≥ 60% and releasing below 55% (hysteresis).\n\n**Try this sequence:**\n1. Press hum1 = 55, hum2 = 58, hum3 = 52 — each press shows `sourceadded` on output 4; mean settles at 55, below the trigger.\n2. Press hum2 = 75 — mean becomes 60.67: **Trigger** fires on output 1 (and a copy on output 4).\n3. Press hum2 = 45 — mean becomes 50.67, below the release value 55: **Release** fires on output 2 with `releaseReason: \"threshold\"`.\n4. Press query at any time for a full snapshot on output 3, including the per-source breakdown in `msg.sources`.\n\nOutputs 1 and 2 only ever carry genuine transitions — everything else, including every accepted reading's new aggregate, appears on output 4 (Events).",
+    "x": 150,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "i-0007",
+    "type": "inject",
+    "name": "hum1 = 55",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "hum1",
+    "payload": "55",
+    "payloadType": "num",
+    "x": 170,
+    "y": 200,
+    "wires": [["sc-0005"]]
+  },
+  {
+    "id": "i-0008",
+    "type": "inject",
+    "name": "hum2 = 58",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "hum2",
+    "payload": "58",
+    "payloadType": "num",
+    "x": 170,
+    "y": 260,
+    "wires": [["sc-0005"]]
+  },
+  {
+    "id": "i-0009",
+    "type": "inject",
+    "name": "hum3 = 52",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "hum3",
+    "payload": "52",
+    "payloadType": "num",
+    "x": 170,
+    "y": 320,
+    "wires": [["sc-0005"]]
+  },
+  {
+    "id": "i-000a",
+    "type": "inject",
+    "name": "hum2 = 75 (trigger)",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "hum2",
+    "payload": "75",
+    "payloadType": "num",
+    "x": 170,
+    "y": 380,
+    "wires": [["sc-0005"]]
+  },
+  {
+    "id": "i-000b",
+    "type": "inject",
+    "name": "hum2 = 45 (release)",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "hum2",
+    "payload": "45",
+    "payloadType": "num",
+    "x": 170,
+    "y": 440,
+    "wires": [["sc-0005"]]
+  },
+  {
+    "id": "i-000c",
+    "type": "inject",
+    "name": "query",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "query",
+    "payloadType": "str",
+    "x": 170,
+    "y": 500,
+    "wires": [["sc-0005"]]
+  },
+  {
+    "id": "sc-0005",
+    "type": "sensor-consensus",
+    "name": "Humidity consensus (mean ≥ 60, release < 55)",
+    "typemode": "numeric",
+    "aggregation": "mean",
+    "triggerdir": "above",
+    "triggervalue": "60",
+    "releasevalue": "55",
+    "boolrule": "majority",
+    "boolrulen": "1",
+    "boolreleaserule": "sameastrigger",
+    "boolreleasen": "1",
+    "truevalues": "",
+    "falsevalues": "",
+    "expectedsources": "",
+    "quorum": "0",
+    "stalewindow": "0",
+    "stalewindowunits": "Second",
+    "quorumlostpolicy": "hold",
+    "emitonchange": true,
+    "heartbeatinterval": "0",
+    "heartbeatintervalunits": "Second",
+    "persist": false,
+    "x": 470,
+    "y": 290,
+    "wires": [["d-0001"], ["d-0002"], ["d-0003"], ["d-0004"]]
+  },
+  {
+    "id": "d-0001",
+    "type": "debug",
+    "name": "1 Trigger",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 760,
+    "y": 200,
+    "wires": []
+  },
+  {
+    "id": "d-0002",
+    "type": "debug",
+    "name": "2 Release",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 760,
+    "y": 260,
+    "wires": []
+  },
+  {
+    "id": "d-0003",
+    "type": "debug",
+    "name": "3 Query",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 760,
+    "y": 320,
+    "wires": []
+  },
+  {
+    "id": "d-0004",
+    "type": "debug",
+    "name": "4 Events",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 760,
+    "y": 380,
+    "wires": []
+  }
 ]

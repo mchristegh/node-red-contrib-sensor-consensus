@@ -22,7 +22,7 @@ Please [open an issue](../../issues) and include:
    (duration, units, and any non-default options such as lock, threshold,
    heartbeat, cooldown, or persistence).
 3. **Debug output from output 4 (Events)** — wire it to a debug node set
-   to show the *complete msg object* and reproduce the problem. The
+   to show the _complete msg object_ and reproduce the problem. The
    event envelope (`timerEvent`, `ignored`, `source`, `timerState`)
    almost always identifies the cause.
 4. **Your Node-RED and Node.js versions.**
@@ -33,7 +33,7 @@ that look like bugs are documented, deliberate design decisions.
 
 ## Requesting a feature
 
-[Open an issue](../../issues) describing the *problem* you're trying to
+[Open an issue](../../issues) describing the _problem_ you're trying to
 solve, not just the proposed mechanism — the use case is what makes a
 request actionable. If it can be expressed in terms of the existing
 event model (outputs, commands, the message envelope), even better.

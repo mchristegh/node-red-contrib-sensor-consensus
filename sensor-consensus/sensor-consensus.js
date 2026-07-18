@@ -31,7 +31,7 @@
  * limitations under the License.
  **/
 
-module.exports = function(RED) {
+module.exports = function (RED) {
   "use strict";
 
   // ---------------------------------------------------------------------------
@@ -39,9 +39,9 @@ module.exports = function(RED) {
   // ---------------------------------------------------------------------------
 
   const CONSENSUS_STATE = {
-    WAITING:     "waiting",
+    WAITING: "waiting",
     UNTRIGGERED: "untriggered",
-    TRIGGERED:   "triggered"
+    TRIGGERED: "triggered",
   };
 
   // Canonical event-type list. Note: `ignored` is a modifier on the real
@@ -55,70 +55,70 @@ module.exports = function(RED) {
   // aggregate. Transitions caused by that same reading (quorum, trigger/
   // release) are separate events, fired afterward in causal order.
   const CONSENSUS_EVENT = {
-    TRIGGERED:       "triggered",
-    RELEASED:        "released",
-    READING:         "reading",
-    SOURCEADDED:     "sourceadded",
+    TRIGGERED: "triggered",
+    RELEASED: "released",
+    READING: "reading",
+    SOURCEADDED: "sourceadded",
     SOURCERECOVERED: "sourcerecovered",
-    SOURCESTALE:     "sourcestale",
-    SOURCEREMOVED:   "sourceremoved",
-    QUORUMLOST:      "quorumlost",
-    QUORUMREGAINED:  "quorumregained",
-    MINORITYREPORT:  "minorityreport",
-    DISABLED:        "disabled",
-    ENABLED:         "enabled",
-    RESET:           "reset",
-    TRIGGERSET:      "triggerset",
-    RELEASESET:      "releaseset",
-    STALESET:        "staleset",
-    QUERY:           "query"
+    SOURCESTALE: "sourcestale",
+    SOURCEREMOVED: "sourceremoved",
+    QUORUMLOST: "quorumlost",
+    QUORUMREGAINED: "quorumregained",
+    MINORITYREPORT: "minorityreport",
+    DISABLED: "disabled",
+    ENABLED: "enabled",
+    RESET: "reset",
+    TRIGGERSET: "triggerset",
+    RELEASESET: "releaseset",
+    STALESET: "staleset",
+    QUERY: "query",
   };
 
   const EVENT_SOURCE = {
     EXTERNAL: "external",
-    INTERNAL: "internal"
+    INTERNAL: "internal",
   };
 
   const TYPE_MODE = {
     NUMERIC: "numeric",
-    BOOLEAN: "boolean"
+    BOOLEAN: "boolean",
   };
 
   const AGGREGATION = {
-    MEAN:        "mean",
-    MEDIAN:      "median",
-    MIN:         "min",
-    MAX:         "max",
+    MEAN: "mean",
+    MEDIAN: "median",
+    MIN: "min",
+    MAX: "max",
     TRIMMEDMEAN: "trimmedmean",
     // Reported in the envelope when trimmed mean lacks the >= 3 fresh
     // sources it needs and silently falls back (design: never fail, never
     // go silent - name the function actually used).
     MEANFALLBACK: "mean(fallback)",
     // Boolean mode always uses fraction-of-fresh-sources-true.
-    FRACTION:     "fraction"
+    FRACTION: "fraction",
   };
 
   const TRIGGER_DIRECTION = {
-    ABOVE: "above",   // trigger when aggregate >= trigger value
-    BELOW: "below"    // trigger when aggregate <= trigger value
+    ABOVE: "above", // trigger when aggregate >= trigger value
+    BELOW: "below", // trigger when aggregate <= trigger value
   };
 
   // Boolean-mode vote rule presets. Each maps to a rule over the fraction
   // of FRESH sources reporting true (the denominator is freshCount, with
   // quorum ensuring "enough" freshness).
   const BOOL_RULE = {
-    ANY:      "any",       // fraction > 0
-    MAJORITY: "majority",  // fraction >= 0.5
-    ALL:      "all",       // fraction === 1.0
-    ATLEASTN: "atleastn",  // trueCount >= N
+    ANY: "any", // fraction > 0
+    MAJORITY: "majority", // fraction >= 0.5
+    ALL: "all", // fraction === 1.0
+    ATLEASTN: "atleastn", // trueCount >= N
     // Release-rule-only preset: release the moment the trigger rule stops
     // being satisfied (no flap suppression).
-    SAMEASTRIGGER: "sameastrigger"
+    SAMEASTRIGGER: "sameastrigger",
   };
 
   const QUORUM_LOST_POLICY = {
-    HOLD:    "hold",     // latch keeps last consensus until data returns
-    RELEASE: "release"   // quorum loss releases immediately (fail-safe)
+    HOLD: "hold", // latch keeps last consensus until data returns
+    RELEASE: "release", // quorum loss releases immediately (fail-safe)
   };
 
   // Recognized command strings. Command precedence is a hard rule: a
@@ -126,34 +126,34 @@ module.exports = function(RED) {
   // both type modes, before any coercion is attempted - so a command word
   // can never function as a boolean true/false value.
   const PAYLOAD = {
-    QUERY:      "query",
-    DISABLE:    "disable",
-    ENABLE:     "enable",
-    RESET:      "reset",
-    REMOVE:     "remove",
+    QUERY: "query",
+    DISABLE: "disable",
+    ENABLE: "enable",
+    RESET: "reset",
+    REMOVE: "remove",
     SETTRIGGER: "settrigger",
     SETRELEASE: "setrelease",
-    SETSTALE:   "setstale"
+    SETSTALE: "setstale",
   };
 
   const UNITS = {
     MILLISECOND: "Millisecond",
-    SECOND:      "Second",
-    MINUTE:      "Minute",
-    HOUR:        "Hour"
+    SECOND: "Second",
+    MINUTE: "Minute",
+    HOUR: "Hour",
   };
 
   const UNITS_INPUT = {
     MILLISECOND: "millisecond",
-    SECOND:      "second",
-    MINUTE:      "minute",
-    HOUR:        "hour"
+    SECOND: "second",
+    MINUTE: "minute",
+    HOUR: "hour",
   };
 
   // Boolean coercion: native true/false and numeric 1/0 always coerce;
   // everything else is matched (lowercased, trimmed) against the node's
   // configurable true/false value lists. These are the list DEFAULTS.
-  const DEFAULT_TRUE_VALUES  = ["true", "on", "yes", "1"];
+  const DEFAULT_TRUE_VALUES = ["true", "on", "yes", "1"];
   const DEFAULT_FALSE_VALUES = ["false", "off", "no", "0"];
 
   // ---------------------------------------------------------------------------
@@ -162,32 +162,36 @@ module.exports = function(RED) {
 
   function SensorConsensus(n) {
     RED.nodes.createNode(this, n);
-    let fs   = require('fs');
-    let path = require('path');
+    const fs = require("fs");
+    const path = require("path");
     let nodefile = n.id.toString();
     let nodepath = "";
-    require('./cycle.js');
+    require("./cycle.js");
 
     if (n._alias != null) {
       nodepath = n._flow.path.replace(/\//g, "-") + "-";
       nodefile = n._alias;
     }
 
-    const stateFile = path.join(RED.settings.userDir, "sensorconsensus-state", nodepath + nodefile);
+    const stateFile = path.join(
+      RED.settings.userDir,
+      "sensorconsensus-state",
+      nodepath + nodefile,
+    );
 
     // -------------------------------------------------------------------------
     // Node property initialization (defensive parsing throughout)
     // -------------------------------------------------------------------------
 
-    this.typemode        = n.typemode        || TYPE_MODE.NUMERIC;
-    this.aggregation     = n.aggregation     || AGGREGATION.MEAN;
-    this.triggerdir      = n.triggerdir      || TRIGGER_DIRECTION.ABOVE;
-    this.triggervalue    = parseConfigNumber(n.triggervalue);
+    this.typemode = n.typemode || TYPE_MODE.NUMERIC;
+    this.aggregation = n.aggregation || AGGREGATION.MEAN;
+    this.triggerdir = n.triggerdir || TRIGGER_DIRECTION.ABOVE;
+    this.triggervalue = parseConfigNumber(n.triggervalue);
     // Blank release means "same as trigger" (no hysteresis). NOTE:
     // Number("") === 0, so blank MUST be caught before Number() - a
     // blank release parsed as 0 would make an Above-mode node never
     // release. parseConfigNumber returns null for blank/invalid.
-    this.releasevalue    = parseConfigNumber(n.releasevalue);
+    this.releasevalue = parseConfigNumber(n.releasevalue);
     if (this.releasevalue === null) this.releasevalue = this.triggervalue;
     // Config-time cross-validation guard. Editor-side cross-field
     // validators are unreliable in Node-RED (they see pre-edit values),
@@ -198,33 +202,45 @@ module.exports = function(RED) {
     // the band. This is the node's only node.warn(): a configuration
     // defect, not a runtime command (those surface as ignored:true
     // events per house convention).
-    if (this.triggervalue !== null && this.releasevalue !== null &&
-        (this.triggerdir === TRIGGER_DIRECTION.BELOW
-          ? this.releasevalue < this.triggervalue
-          : this.releasevalue > this.triggervalue)) {
-      this.warn("Configured release value " + this.releasevalue +
-                " is on the wrong side of trigger value " + this.triggervalue +
-                " for direction '" + this.triggerdir +
-                "' - ignoring release (same as trigger)");
+    if (
+      this.triggervalue !== null &&
+      this.releasevalue !== null &&
+      (this.triggerdir === TRIGGER_DIRECTION.BELOW
+        ? this.releasevalue < this.triggervalue
+        : this.releasevalue > this.triggervalue)
+    ) {
+      this.warn(
+        "Configured release value " +
+          this.releasevalue +
+          " is on the wrong side of trigger value " +
+          this.triggervalue +
+          " for direction '" +
+          this.triggerdir +
+          "' - ignoring release (same as trigger)",
+      );
       this.releasevalue = this.triggervalue;
     }
-    this.boolrule        = n.boolrule        || BOOL_RULE.MAJORITY;
-    this.boolrulen       = isNaN(Number(n.boolrulen)) ? 1 : Number(n.boolrulen);
+    this.boolrule = n.boolrule || BOOL_RULE.MAJORITY;
+    this.boolrulen = isNaN(Number(n.boolrulen)) ? 1 : Number(n.boolrulen);
     this.boolreleaserule = n.boolreleaserule || BOOL_RULE.SAMEASTRIGGER;
-    this.boolreleasen    = isNaN(Number(n.boolreleasen)) ? 1 : Number(n.boolreleasen);
-    this.truevalues      = parseValueList(n.truevalues,  DEFAULT_TRUE_VALUES);
-    this.falsevalues     = parseValueList(n.falsevalues, DEFAULT_FALSE_VALUES);
+    this.boolreleasen = isNaN(Number(n.boolreleasen))
+      ? 1
+      : Number(n.boolreleasen);
+    this.truevalues = parseValueList(n.truevalues, DEFAULT_TRUE_VALUES);
+    this.falsevalues = parseValueList(n.falsevalues, DEFAULT_FALSE_VALUES);
     this.expectedsources = parseTopicList(n.expectedsources);
-    this.quorum          = isNaN(Number(n.quorum)) ? 0 : Number(n.quorum);
-    this.stalewindow     = isNaN(Number(n.stalewindow)) ? 0 : Number(n.stalewindow);
+    this.quorum = isNaN(Number(n.quorum)) ? 0 : Number(n.quorum);
+    this.stalewindow = isNaN(Number(n.stalewindow)) ? 0 : Number(n.stalewindow);
     this.stalewindowunits = n.stalewindowunits || UNITS.SECOND;
     this.quorumlostpolicy = n.quorumlostpolicy || QUORUM_LOST_POLICY.HOLD;
-    this.emitonchange    = n.emitonchange !== false;   // default CHECKED
-    this.heartbeatinterval      = isNaN(Number(n.heartbeatinterval)) ? 0 : Number(n.heartbeatinterval);
+    this.emitonchange = n.emitonchange !== false; // default CHECKED
+    this.heartbeatinterval = isNaN(Number(n.heartbeatinterval))
+      ? 0
+      : Number(n.heartbeatinterval);
     this.heartbeatintervalunits = n.heartbeatintervalunits || UNITS.SECOND;
-    this.persist         = n.persist || false;
+    this.persist = n.persist || false;
 
-    let node = this;
+    const node = this;
 
     // -------------------------------------------------------------------------
     // Runtime state variables
@@ -237,15 +253,15 @@ module.exports = function(RED) {
     // Expected sources are pre-registered at construction with seen:false.
     let sources = {};
 
-    let consensusState  = CONSENSUS_STATE.WAITING;
-    let disabled        = false;
-    let quorumOK        = null;    // null until first computed; then boolean
-    let aggregate       = null;    // current aggregate value, null while no data
-    let aggregationUsed = null;    // AGGREGATION.* actually applied (fallback-aware)
-    let minorityTopics  = [];      // boolean mode: current disagreeing fresh topics
-    let boolTrueCount   = 0;       // boolean mode: fresh sources currently reporting true
+    let consensusState = CONSENSUS_STATE.WAITING;
+    let disabled = false;
+    let quorumOK = null; // null until first computed; then boolean
+    let aggregate = null; // current aggregate value, null while no data
+    let aggregationUsed = null; // AGGREGATION.* actually applied (fallback-aware)
+    let minorityTopics = []; // boolean mode: current disagreeing fresh topics
+    let boolTrueCount = 0; // boolean mode: fresh sources currently reporting true
     let lastReportedMinority = []; // last minority set surfaced via MINORITYREPORT
-                                   // (report fires on set CHANGE, not per reading)
+    // (report fires on set CHANGE, not per reading)
 
     // Runtime overrides (settrigger / setrelease / setstale). null = use config.
     let overrideTrigger = null;
@@ -267,7 +283,7 @@ module.exports = function(RED) {
     // accepted reading, setstale, remove, reset, and each expiry it
     // processes. Zero timers when staleness is disabled or nothing fresh.
     let stalenessTimeout = null;
-    let heartbeatTimer   = null;
+    let heartbeatTimer = null;
 
     const maxTimeout = 2147483647;
 
@@ -282,29 +298,47 @@ module.exports = function(RED) {
      * zero silently corrupts threshold semantics.
      */
     function parseConfigNumber(raw) {
-      if (raw === undefined || raw === null || String(raw).trim() === "") return null;
-      let v = Number(raw);
+      if (raw === undefined || raw === null || String(raw).trim() === "")
+        return null;
+      const v = Number(raw);
       return isNaN(v) ? null : v;
     }
 
     function parseValueList(raw, defaults) {
-      if (typeof raw !== 'string' || raw.trim() === "") return defaults.slice();
-      return raw.split(",").map(function(v) { return v.trim().toLowerCase(); })
-                           .filter(function(v) { return v !== ""; });
+      if (typeof raw !== "string" || raw.trim() === "") return defaults.slice();
+      return raw
+        .split(",")
+        .map(function (v) {
+          return v.trim().toLowerCase();
+        })
+        .filter(function (v) {
+          return v !== "";
+        });
     }
 
     function parseTopicList(raw) {
-      if (typeof raw !== 'string' || raw.trim() === "") return [];
-      return raw.split(",").map(function(v) { return v.trim(); })
-                           .filter(function(v) { return v !== ""; });
+      if (typeof raw !== "string" || raw.trim() === "") return [];
+      return raw
+        .split(",")
+        .map(function (v) {
+          return v.trim();
+        })
+        .filter(function (v) {
+          return v !== "";
+        });
     }
 
     // -------------------------------------------------------------------------
     // Expected-source pre-registration
     // -------------------------------------------------------------------------
 
-    node.expectedsources.forEach(function(topic) {
-      sources[topic] = { value: null, lastSeen: null, stale: false, seen: false };
+    node.expectedsources.forEach(function (topic) {
+      sources[topic] = {
+        value: null,
+        lastSeen: null,
+        stale: false,
+        seen: false,
+      };
     });
 
     // -------------------------------------------------------------------------
@@ -314,27 +348,43 @@ module.exports = function(RED) {
     if (this.persist === true) {
       try {
         if (fs.existsSync(stateFile)) {
-          let saved = JSON.retrocycle(JSON.parse(readState()));
+          const saved = JSON.retrocycle(JSON.parse(readState()));
 
-          if (saved.sources && typeof saved.sources === 'object') {
-            Object.keys(saved.sources).forEach(function(t) {
-              let s = saved.sources[t];
+          if (saved.sources && typeof saved.sources === "object") {
+            Object.keys(saved.sources).forEach(function (t) {
+              const s = saved.sources[t];
               sources[t] = {
-                value:    s.value,
+                value: s.value,
                 lastSeen: s.lastSeen ? new Date(s.lastSeen) : null,
-                stale:    false,   // deliberately not persisted - recomputed
-                                   // against wall-clock time just below
-                seen:     s.seen === true
+                stale: false, // deliberately not persisted - recomputed
+                // against wall-clock time just below
+                seen: s.seen === true,
               };
             });
           }
-          if (typeof saved.consensusState === 'string') consensusState = saved.consensusState;
-          if (typeof saved.disabled === 'boolean')      disabled       = saved.disabled;
-          if (saved.overrideTrigger !== undefined && saved.overrideTrigger !== null) overrideTrigger = saved.overrideTrigger;
-          if (saved.overrideRelease !== undefined && saved.overrideRelease !== null) overrideRelease = saved.overrideRelease;
-          if (saved.overrideStaleMS !== undefined && saved.overrideStaleMS !== null) overrideStaleMS = saved.overrideStaleMS;
-          if (saved.baselineMsg && typeof saved.baselineMsg === 'object' &&
-              Object.keys(saved.baselineMsg).length > 0) {
+          if (typeof saved.consensusState === "string")
+            consensusState = saved.consensusState;
+          if (typeof saved.disabled === "boolean") disabled = saved.disabled;
+          if (
+            saved.overrideTrigger !== undefined &&
+            saved.overrideTrigger !== null
+          )
+            overrideTrigger = saved.overrideTrigger;
+          if (
+            saved.overrideRelease !== undefined &&
+            saved.overrideRelease !== null
+          )
+            overrideRelease = saved.overrideRelease;
+          if (
+            saved.overrideStaleMS !== undefined &&
+            saved.overrideStaleMS !== null
+          )
+            overrideStaleMS = saved.overrideStaleMS;
+          if (
+            saved.baselineMsg &&
+            typeof saved.baselineMsg === "object" &&
+            Object.keys(saved.baselineMsg).length > 0
+          ) {
             baselineMsg = saved.baselineMsg;
           }
 
@@ -342,13 +392,17 @@ module.exports = function(RED) {
           // sources stale, quorum lost" rather than pretending old
           // readings are fresh. Mark + recompute first, then dispatch,
           // same ordering as onStalenessExpiry.
-          let staleMS = effectiveStaleMS();
-          let nowMS   = (new Date()).getTime();
-          let staled  = [];
+          const staleMS = effectiveStaleMS();
+          const nowMS = new Date().getTime();
+          const staled = [];
           if (staleMS > 0) {
-            Object.keys(sources).forEach(function(t) {
-              let s = sources[t];
-              if (s.seen && s.lastSeen !== null && (nowMS - s.lastSeen.getTime()) >= staleMS) {
+            Object.keys(sources).forEach(function (t) {
+              const s = sources[t];
+              if (
+                s.seen &&
+                s.lastSeen !== null &&
+                nowMS - s.lastSeen.getTime() >= staleMS
+              ) {
                 s.stale = true;
                 staled.push(t);
               }
@@ -363,19 +417,33 @@ module.exports = function(RED) {
           // and the quorumlost that follows is the correction. (Regaining
           // on restore is unreachable - fresh <= seen - the two-way
           // dispatch below is defensive symmetry only.)
-          let seenCount = Object.keys(sources).filter(function(t) { return sources[t].seen; }).length;
-          quorumOK      = node.quorum <= 0 ? true : seenCount >= node.quorum;
+          const seenCount = Object.keys(sources).filter(function (t) {
+            return sources[t].seen;
+          }).length;
+          quorumOK = node.quorum <= 0 ? true : seenCount >= node.quorum;
 
-          staled.forEach(function(t) {
-            dispatchEvent(CONSENSUS_EVENT.SOURCESTALE, baselineMsg, false,
-                          EVENT_SOURCE.INTERNAL, { staleTopic: t });
+          staled.forEach(function (t) {
+            dispatchEvent(
+              CONSENSUS_EVENT.SOURCESTALE,
+              baselineMsg,
+              false,
+              EVENT_SOURCE.INTERNAL,
+              { staleTopic: t },
+            );
           });
 
-          let newQuorum = node.quorum <= 0 ? true : freshTopics().length >= node.quorum;
+          const newQuorum =
+            node.quorum <= 0 ? true : freshTopics().length >= node.quorum;
           if (newQuorum !== quorumOK) {
             quorumOK = newQuorum;
-            dispatchEvent(newQuorum ? CONSENSUS_EVENT.QUORUMREGAINED : CONSENSUS_EVENT.QUORUMLOST,
-                          baselineMsg, false, EVENT_SOURCE.INTERNAL);
+            dispatchEvent(
+              newQuorum
+                ? CONSENSUS_EVENT.QUORUMREGAINED
+                : CONSENSUS_EVENT.QUORUMLOST,
+              baselineMsg,
+              false,
+              EVENT_SOURCE.INTERNAL,
+            );
           }
 
           // The latch restores silently - restore NEVER fires Trigger or
@@ -386,7 +454,12 @@ module.exports = function(RED) {
           armStalenessClock();
         }
       } catch (error) {
-        node.error("Error processing persistent file data for sensor-consensus node " + n.id.toString() + "\n\n" + error.toString());
+        node.error(
+          "Error processing persistent file data for sensor-consensus node " +
+            n.id.toString() +
+            "\n\n" +
+            error.toString(),
+        );
       }
     } else {
       deleteState();
@@ -403,11 +476,11 @@ module.exports = function(RED) {
     // Event listeners
     // -------------------------------------------------------------------------
 
-    this.on("input", function(msg) {
+    this.on("input", function (msg) {
       handleInputEvent(msg, false);
     });
 
-    this.on("close", function(removed, done) {
+    this.on("close", function (removed, done) {
       stopStalenessClock();
       stopHeartbeat();
       node.status({});
@@ -431,33 +504,48 @@ module.exports = function(RED) {
      *   disabled           grey ring   "Disabled | " + normal text
      */
     function buildStatus() {
-      let fresh = freshTopics().length;
-      let known = Object.keys(sources).length;
-      let q     = quorumOK === null ? (node.quorum <= 0) : quorumOK;
+      const fresh = freshTopics().length;
+      const known = Object.keys(sources).length;
+      const q = quorumOK === null ? node.quorum <= 0 : quorumOK;
       let fill, shape, text;
 
       if (consensusState === CONSENSUS_STATE.WAITING) {
-        fill  = "grey";
+        fill = "grey";
         shape = "dot";
         // Small pragmatic deviation from the design table: with quorum
         // disabled there is no meaningful F/Q pair to show, so just the
         // fresh count.
-        text  = node.quorum > 0
-          ? "Waiting (fresh/quorum: " + fresh + "/" + node.quorum + ")"
-          : "Waiting (" + fresh + " fresh)";
+        text =
+          node.quorum > 0
+            ? "Waiting (fresh/quorum: " + fresh + "/" + node.quorum + ")"
+            : "Waiting (" + fresh + " fresh)";
       } else if (!q) {
-        fill  = "yellow";
+        fill = "yellow";
         shape = "ring";
-        text  = "No quorum (" + fresh + "/" + node.quorum + ") | " + renderAggregateStatus();
-        if (consensusState === CONSENSUS_STATE.TRIGGERED) text = "Triggered | " + text;
+        text =
+          "No quorum (" +
+          fresh +
+          "/" +
+          node.quorum +
+          ") | " +
+          renderAggregateStatus();
+        if (consensusState === CONSENSUS_STATE.TRIGGERED)
+          text = "Triggered | " + text;
       } else if (consensusState === CONSENSUS_STATE.TRIGGERED) {
-        fill  = "blue";
+        fill = "blue";
         shape = "dot";
-        text  = "Triggered: " + renderAggregateStatus() + " (" + fresh + "/" + known + " fresh)";
+        text =
+          "Triggered: " +
+          renderAggregateStatus() +
+          " (" +
+          fresh +
+          "/" +
+          known +
+          " fresh)";
       } else {
-        fill  = "green";
+        fill = "green";
         shape = "dot";
-        text  = renderAggregateStatus() + " (" + fresh + "/" + known + " fresh)";
+        text = renderAggregateStatus() + " (" + fresh + "/" + known + " fresh)";
       }
 
       if (disabled) {
@@ -474,10 +562,12 @@ module.exports = function(RED) {
     function renderAggregateStatus() {
       if (aggregate === null) return "--";
       if (node.typemode === TYPE_MODE.BOOLEAN) {
-        let fresh = freshTopics().length;
+        const fresh = freshTopics().length;
         return boolTrueCount + "T/" + (fresh - boolTrueCount) + "F of " + fresh;
       }
-      return Number.isInteger(aggregate) ? String(aggregate) : aggregate.toFixed(2);
+      return Number.isInteger(aggregate)
+        ? String(aggregate)
+        : aggregate.toFixed(2);
     }
 
     // -------------------------------------------------------------------------
@@ -490,7 +580,7 @@ module.exports = function(RED) {
      * Returns { ok: boolean, value: number|undefined }.
      */
     function coerceNumeric(payload) {
-      let v = Number(payload);
+      const v = Number(payload);
       return isNaN(v) ? { ok: false } : { ok: true, value: v };
     }
 
@@ -501,12 +591,13 @@ module.exports = function(RED) {
      * Returns { ok: boolean, value: boolean|undefined }.
      */
     function coerceBoolean(payload) {
-      if (payload === true  || payload === 1) return { ok: true, value: true };
+      if (payload === true || payload === 1) return { ok: true, value: true };
       if (payload === false || payload === 0) return { ok: true, value: false };
-      if (typeof payload === 'string') {
-        let s = payload.trim().toLowerCase();
-        if (node.truevalues.indexOf(s)  !== -1) return { ok: true, value: true };
-        if (node.falsevalues.indexOf(s) !== -1) return { ok: true, value: false };
+      if (typeof payload === "string") {
+        const s = payload.trim().toLowerCase();
+        if (node.truevalues.indexOf(s) !== -1) return { ok: true, value: true };
+        if (node.falsevalues.indexOf(s) !== -1)
+          return { ok: true, value: false };
       }
       return { ok: false };
     }
@@ -521,16 +612,24 @@ module.exports = function(RED) {
      * unparseable - the caller surfaces that as ignored:true.
      */
     function parseBoolOverride(value, nValue, allowSameAsTrigger) {
-      if (typeof value === 'string') {
-        let s = value.trim().toLowerCase();
-        if (s === BOOL_RULE.ANY || s === BOOL_RULE.MAJORITY || s === BOOL_RULE.ALL) return { rule: s };
+      if (typeof value === "string") {
+        const s = value.trim().toLowerCase();
+        if (
+          s === BOOL_RULE.ANY ||
+          s === BOOL_RULE.MAJORITY ||
+          s === BOOL_RULE.ALL
+        )
+          return { rule: s };
         if (s === BOOL_RULE.ATLEASTN) {
-          let cnt = Number(nValue);
-          return (!isNaN(cnt) && cnt >= 1) ? { rule: BOOL_RULE.ATLEASTN, n: cnt } : null;
+          const cnt = Number(nValue);
+          return !isNaN(cnt) && cnt >= 1
+            ? { rule: BOOL_RULE.ATLEASTN, n: cnt }
+            : null;
         }
-        if (allowSameAsTrigger && s === BOOL_RULE.SAMEASTRIGGER) return { rule: BOOL_RULE.SAMEASTRIGGER };
+        if (allowSameAsTrigger && s === BOOL_RULE.SAMEASTRIGGER)
+          return { rule: BOOL_RULE.SAMEASTRIGGER };
       }
-      let f = Number(value);
+      const f = Number(value);
       if (!isNaN(f) && f >= 0 && f <= 1) return { fraction: f };
       return null;
     }
@@ -541,24 +640,35 @@ module.exports = function(RED) {
 
     function convertToMilliseconds(value, units) {
       switch (units) {
-        case UNITS.SECOND:      return value * 1000;
-        case UNITS.MINUTE:      return value * 1000 * 60;
-        case UNITS.HOUR:        return value * 1000 * 60 * 60;
-        case UNITS.MILLISECOND: return value;
-        default:                return value;
+        case UNITS.SECOND:
+          return value * 1000;
+        case UNITS.MINUTE:
+          return value * 1000 * 60;
+        case UNITS.HOUR:
+          return value * 1000 * 60 * 60;
+        case UNITS.MILLISECOND:
+          return value;
+        default:
+          return value;
       }
     }
 
     function normalizeUnits(units) {
-      return typeof units === 'string' ? units.toLowerCase().replace(/s$/, '') : null;
+      return typeof units === "string"
+        ? units.toLowerCase().replace(/s$/, "")
+        : null;
     }
 
     function msgValueToMs(value, units) {
       switch (units) {
-        case UNITS_INPUT.SECOND: return value * 1000;
-        case UNITS_INPUT.MINUTE: return value * 1000 * 60;
-        case UNITS_INPUT.HOUR:   return value * 1000 * 60 * 60;
-        default:                 return value;
+        case UNITS_INPUT.SECOND:
+          return value * 1000;
+        case UNITS_INPUT.MINUTE:
+          return value * 1000 * 60;
+        case UNITS_INPUT.HOUR:
+          return value * 1000 * 60 * 60;
+        default:
+          return value;
       }
     }
 
@@ -569,7 +679,7 @@ module.exports = function(RED) {
     }
 
     function freshTopics() {
-      return Object.keys(sources).filter(function(t) {
+      return Object.keys(sources).filter(function (t) {
         return sources[t].seen && !sources[t].stale;
       });
     }
@@ -579,13 +689,15 @@ module.exports = function(RED) {
      * { <topic>: { value, lastSeen (ISO or null), stale, seen } }
      */
     function sourcesSnapshot() {
-      let snap = {};
-      Object.keys(sources).forEach(function(t) {
+      const snap = {};
+      Object.keys(sources).forEach(function (t) {
         snap[t] = {
-          value:    sources[t].value,
-          lastSeen: sources[t].lastSeen ? sources[t].lastSeen.toISOString() : null,
-          stale:    sources[t].stale,
-          seen:     sources[t].seen
+          value: sources[t].value,
+          lastSeen: sources[t].lastSeen
+            ? sources[t].lastSeen.toISOString()
+            : null,
+          stale: sources[t].stale,
+          seen: sources[t].seen,
         };
       });
       return snap;
@@ -601,18 +713,18 @@ module.exports = function(RED) {
      * and layering the standard state/metadata fields on top.
      */
     function buildEventMessage(consensusEvent, baseMsg, ignored, source) {
-      let evtMsg = RED.util.cloneMessage(baseMsg || {});
+      const evtMsg = RED.util.cloneMessage(baseMsg || {});
       evtMsg.consensusEvent = consensusEvent;
       evtMsg.consensusState = consensusState;
-      evtMsg.aggregate      = aggregate;
-      evtMsg.aggregation    = aggregationUsed;
-      evtMsg.quorum         = quorumOK === null ? (node.quorum <= 0) : quorumOK;
-      evtMsg.freshCount     = freshTopics().length;
-      evtMsg.sourceCount    = Object.keys(sources).length;
-      evtMsg.sources        = sourcesSnapshot();
-      evtMsg.disabled       = disabled;
-      evtMsg.ignored        = ignored;
-      evtMsg.source         = source;
+      evtMsg.aggregate = aggregate;
+      evtMsg.aggregation = aggregationUsed;
+      evtMsg.quorum = quorumOK === null ? node.quorum <= 0 : quorumOK;
+      evtMsg.freshCount = freshTopics().length;
+      evtMsg.sourceCount = Object.keys(sources).length;
+      evtMsg.sources = sourcesSnapshot();
+      evtMsg.disabled = disabled;
+      evtMsg.ignored = ignored;
+      evtMsg.source = source;
       return evtMsg;
     }
 
@@ -635,11 +747,23 @@ module.exports = function(RED) {
      * rejectedValue, staleTopic, recoveredTopic, addedTopic, removedTopic,
      * minorityTopics, triggerSet, releaseSet, staleSet) onto the message.
      */
-    function dispatchEvent(consensusEvent, baseMsg, ignored, source, extraProps) {
-      let evtMsg = buildEventMessage(consensusEvent, baseMsg, ignored, source);
+    function dispatchEvent(
+      consensusEvent,
+      baseMsg,
+      ignored,
+      source,
+      extraProps,
+    ) {
+      const evtMsg = buildEventMessage(
+        consensusEvent,
+        baseMsg,
+        ignored,
+        source,
+      );
       if (extraProps) {
-        for (let key in extraProps) {
-          if (Object.prototype.hasOwnProperty.call(extraProps, key)) evtMsg[key] = extraProps[key];
+        for (const key in extraProps) {
+          if (Object.prototype.hasOwnProperty.call(extraProps, key))
+            evtMsg[key] = extraProps[key];
         }
       }
 
@@ -650,7 +774,7 @@ module.exports = function(RED) {
 
       let out1 = null;
       let out2 = null;
-      let out4 = evtMsg;
+      const out4 = evtMsg;
 
       if (!ignored) {
         if (consensusEvent === CONSENSUS_EVENT.TRIGGERED) {
@@ -683,69 +807,84 @@ module.exports = function(RED) {
      * With zero fresh sources: aggregate = null, aggregationUsed = null.
      */
     function computeAggregate() {
-      let freshT = freshTopics();
-      let values = freshT.map(function(t) { return sources[t].value; });
+      const freshT = freshTopics();
+      const values = freshT.map(function (t) {
+        return sources[t].value;
+      });
 
       if (values.length === 0) {
-        aggregate       = null;
+        aggregate = null;
         aggregationUsed = null;
-        boolTrueCount   = 0;
-        minorityTopics  = [];
+        boolTrueCount = 0;
+        minorityTopics = [];
         return;
       }
 
       if (node.typemode === TYPE_MODE.BOOLEAN) {
-        boolTrueCount   = values.filter(function(v) { return v === true; }).length;
-        aggregate       = boolTrueCount / values.length;
+        boolTrueCount = values.filter(function (v) {
+          return v === true;
+        }).length;
+        aggregate = boolTrueCount / values.length;
         aggregationUsed = AGGREGATION.FRACTION;
         // A consensus value exists only when the fraction is not exactly
         // split; the minority is every fresh source disagreeing with it.
-        let consensusValue = aggregate > 0.5 ? true : (aggregate < 0.5 ? false : null);
-        minorityTopics = consensusValue === null ? [] : freshT.filter(function(t) {
-          return sources[t].value !== consensusValue;
-        });
+        const consensusValue =
+          aggregate > 0.5 ? true : aggregate < 0.5 ? false : null;
+        minorityTopics =
+          consensusValue === null
+            ? []
+            : freshT.filter(function (t) {
+                return sources[t].value !== consensusValue;
+              });
         return;
       }
 
-      boolTrueCount  = 0;
+      boolTrueCount = 0;
       minorityTopics = [];
-      let sorted = values.slice().sort(function(a, b) { return a - b; });
-      let mean   = function(arr) {
-        return arr.reduce(function(a, b) { return a + b; }, 0) / arr.length;
+      const sorted = values.slice().sort(function (a, b) {
+        return a - b;
+      });
+      const mean = function (arr) {
+        return (
+          arr.reduce(function (a, b) {
+            return a + b;
+          }, 0) / arr.length
+        );
       };
 
       switch (node.aggregation) {
         case AGGREGATION.MEDIAN: {
-          let mid = Math.floor(sorted.length / 2);
-          aggregate = (sorted.length % 2 === 1)
-            ? sorted[mid]
-            : (sorted[mid - 1] + sorted[mid]) / 2;
+          const mid = Math.floor(sorted.length / 2);
+          aggregate =
+            sorted.length % 2 === 1
+              ? sorted[mid]
+              : (sorted[mid - 1] + sorted[mid]) / 2;
           aggregationUsed = AGGREGATION.MEDIAN;
           break;
         }
         case AGGREGATION.MIN:
-          aggregate       = sorted[0];
+          aggregate = sorted[0];
           aggregationUsed = AGGREGATION.MIN;
           break;
         case AGGREGATION.MAX:
-          aggregate       = sorted[sorted.length - 1];
+          aggregate = sorted[sorted.length - 1];
           aggregationUsed = AGGREGATION.MAX;
           break;
         case AGGREGATION.TRIMMEDMEAN:
           if (sorted.length >= 3) {
             // Drops the single highest and single lowest fresh value.
-            aggregate       = mean(sorted.slice(1, sorted.length - 1));
+            aggregate = mean(sorted.slice(1, sorted.length - 1));
             aggregationUsed = AGGREGATION.TRIMMEDMEAN;
           } else {
             // Fewer than 3 fresh sources: silent fallback to mean, named
             // in the envelope - never fails, never goes silent.
-            aggregate       = mean(sorted);
+            aggregate = mean(sorted);
             aggregationUsed = AGGREGATION.MEANFALLBACK;
           }
           break;
         case AGGREGATION.MEAN:
         default:
-          aggregate       = mean(sorted);
+          aggregate = mean(sorted);
           aggregationUsed = AGGREGATION.MEAN;
           break;
       }
@@ -794,8 +933,8 @@ module.exports = function(RED) {
      */
     function evaluate(baseMsg, source) {
       // 1. Quorum boundary.
-      let freshCount = freshTopics().length;
-      let newQuorum  = node.quorum <= 0 ? true : freshCount >= node.quorum;
+      const freshCount = freshTopics().length;
+      const newQuorum = node.quorum <= 0 ? true : freshCount >= node.quorum;
 
       if (quorumOK === null) {
         // First computation: adopt silently - you can't lose (or regain)
@@ -803,8 +942,14 @@ module.exports = function(RED) {
         quorumOK = newQuorum;
       } else if (newQuorum !== quorumOK) {
         quorumOK = newQuorum;
-        dispatchEvent(newQuorum ? CONSENSUS_EVENT.QUORUMREGAINED : CONSENSUS_EVENT.QUORUMLOST,
-                      baseMsg, false, source);
+        dispatchEvent(
+          newQuorum
+            ? CONSENSUS_EVENT.QUORUMREGAINED
+            : CONSENSUS_EVENT.QUORUMLOST,
+          baseMsg,
+          false,
+          source,
+        );
       }
 
       // 2. Below quorum (or no data): evaluation suspended. Under the
@@ -812,10 +957,13 @@ module.exports = function(RED) {
       //    pass rather than only on the boundary crossing, so a release
       //    suppressed while disabled fires genuinely on enable.
       if (!quorumOK || aggregate === null) {
-        if (consensusState === CONSENSUS_STATE.TRIGGERED &&
-            node.quorumlostpolicy === QUORUM_LOST_POLICY.RELEASE) {
-          attemptTransition(CONSENSUS_EVENT.RELEASED, baseMsg, source,
-                            { releaseReason: "quorumlost" });
+        if (
+          consensusState === CONSENSUS_STATE.TRIGGERED &&
+          node.quorumlostpolicy === QUORUM_LOST_POLICY.RELEASE
+        ) {
+          attemptTransition(CONSENSUS_EVENT.RELEASED, baseMsg, source, {
+            releaseReason: "quorumlost",
+          });
         }
         return;
       }
@@ -828,11 +976,18 @@ module.exports = function(RED) {
 
       // 4. Threshold evaluation. Only the relevant side of the latch is
       //    checked - the latch itself is what prevents re-fires.
-      if (consensusState === CONSENSUS_STATE.UNTRIGGERED && triggerConditionMet()) {
+      if (
+        consensusState === CONSENSUS_STATE.UNTRIGGERED &&
+        triggerConditionMet()
+      ) {
         attemptTransition(CONSENSUS_EVENT.TRIGGERED, baseMsg, source);
-      } else if (consensusState === CONSENSUS_STATE.TRIGGERED && releaseConditionMet()) {
-        attemptTransition(CONSENSUS_EVENT.RELEASED, baseMsg, source,
-                          { releaseReason: "threshold" });
+      } else if (
+        consensusState === CONSENSUS_STATE.TRIGGERED &&
+        releaseConditionMet()
+      ) {
+        attemptTransition(CONSENSUS_EVENT.RELEASED, baseMsg, source, {
+          releaseReason: "threshold",
+        });
       }
 
       // 5. Boolean-mode minority report: fires when the disagreeing set
@@ -840,12 +995,17 @@ module.exports = function(RED) {
       //    on every reading - a stuck sensor produces one report, not a
       //    stream. Only reachable with quorum satisfied, per design.
       if (node.typemode === TYPE_MODE.BOOLEAN) {
-        let current = minorityTopics.slice().sort().join("\u0000");
-        let last    = lastReportedMinority.slice().sort().join("\u0000");
+        const current = minorityTopics.slice().sort().join("\u0000");
+        const last = lastReportedMinority.slice().sort().join("\u0000");
         if (current !== last) {
           lastReportedMinority = minorityTopics.slice();
-          dispatchEvent(CONSENSUS_EVENT.MINORITYREPORT, baseMsg, false, source,
-                        { minorityTopics: minorityTopics.slice() });
+          dispatchEvent(
+            CONSENSUS_EVENT.MINORITYREPORT,
+            baseMsg,
+            false,
+            source,
+            { minorityTopics: minorityTopics.slice() },
+          );
         }
       }
     }
@@ -854,15 +1014,20 @@ module.exports = function(RED) {
      * Boolean-mode vote rule evaluation over the current fresh set.
      */
     function boolRuleMet(rule, nValue) {
-      let freshCount = freshTopics().length;
+      const freshCount = freshTopics().length;
       if (freshCount === 0) return false;
-      let fraction = boolTrueCount / freshCount;
+      const fraction = boolTrueCount / freshCount;
       switch (rule) {
-        case BOOL_RULE.ANY:      return boolTrueCount > 0;
-        case BOOL_RULE.MAJORITY: return fraction >= 0.5;
-        case BOOL_RULE.ALL:      return boolTrueCount === freshCount;
-        case BOOL_RULE.ATLEASTN: return boolTrueCount >= nValue;
-        default:                 return false;
+        case BOOL_RULE.ANY:
+          return boolTrueCount > 0;
+        case BOOL_RULE.MAJORITY:
+          return fraction >= 0.5;
+        case BOOL_RULE.ALL:
+          return boolTrueCount === freshCount;
+        case BOOL_RULE.ATLEASTN:
+          return boolTrueCount >= nValue;
+        default:
+          return false;
       }
     }
 
@@ -881,7 +1046,8 @@ module.exports = function(RED) {
      */
     function distinctRelease() {
       if (overrideRelease !== null) return overrideRelease;
-      if (node.releasevalue !== null && node.releasevalue !== node.triggervalue) return node.releasevalue;
+      if (node.releasevalue !== null && node.releasevalue !== node.triggervalue)
+        return node.releasevalue;
       return null;
     }
 
@@ -893,7 +1059,7 @@ module.exports = function(RED) {
      * the no-hysteresis case can never self-invalidate.
      */
     function effectiveRelease() {
-      let r = distinctRelease();
+      const r = distinctRelease();
       return r !== null ? r : effectiveTrigger();
     }
 
@@ -906,14 +1072,17 @@ module.exports = function(RED) {
       if (aggregate === null) return false;
       if (node.typemode === TYPE_MODE.BOOLEAN) {
         if (overrideTrigger !== null) {
-          if (typeof overrideTrigger.fraction === 'number') return aggregate >= overrideTrigger.fraction;
+          if (typeof overrideTrigger.fraction === "number")
+            return aggregate >= overrideTrigger.fraction;
           return boolRuleMet(overrideTrigger.rule, overrideTrigger.n);
         }
         return boolRuleMet(node.boolrule, node.boolrulen);
       }
-      let t = effectiveTrigger();
+      const t = effectiveTrigger();
       if (t === null) return false;
-      return node.triggerdir === TRIGGER_DIRECTION.BELOW ? aggregate <= t : aggregate >= t;
+      return node.triggerdir === TRIGGER_DIRECTION.BELOW
+        ? aggregate <= t
+        : aggregate >= t;
     }
 
     /**
@@ -929,16 +1098,21 @@ module.exports = function(RED) {
       if (aggregate === null) return false;
       if (node.typemode === TYPE_MODE.BOOLEAN) {
         if (overrideRelease !== null) {
-          if (typeof overrideRelease.fraction === 'number') return aggregate < overrideRelease.fraction;
-          if (overrideRelease.rule === BOOL_RULE.SAMEASTRIGGER) return !triggerConditionMet();
+          if (typeof overrideRelease.fraction === "number")
+            return aggregate < overrideRelease.fraction;
+          if (overrideRelease.rule === BOOL_RULE.SAMEASTRIGGER)
+            return !triggerConditionMet();
           return !boolRuleMet(overrideRelease.rule, overrideRelease.n);
         }
-        if (node.boolreleaserule === BOOL_RULE.SAMEASTRIGGER) return !triggerConditionMet();
+        if (node.boolreleaserule === BOOL_RULE.SAMEASTRIGGER)
+          return !triggerConditionMet();
         return !boolRuleMet(node.boolreleaserule, node.boolreleasen);
       }
-      let r = effectiveRelease();
+      const r = effectiveRelease();
       if (r === null) return false;
-      return node.triggerdir === TRIGGER_DIRECTION.BELOW ? aggregate > r : aggregate < r;
+      return node.triggerdir === TRIGGER_DIRECTION.BELOW
+        ? aggregate > r
+        : aggregate < r;
     }
 
     /**
@@ -953,9 +1127,10 @@ module.exports = function(RED) {
         dispatchEvent(targetEvent, baseMsg, true, source, extraProps);
         return;
       }
-      consensusState = (targetEvent === CONSENSUS_EVENT.TRIGGERED)
-        ? CONSENSUS_STATE.TRIGGERED
-        : CONSENSUS_STATE.UNTRIGGERED;
+      consensusState =
+        targetEvent === CONSENSUS_EVENT.TRIGGERED
+          ? CONSENSUS_STATE.TRIGGERED
+          : CONSENSUS_STATE.UNTRIGGERED;
       dispatchEvent(targetEvent, baseMsg, false, source, extraProps);
     }
 
@@ -972,19 +1147,20 @@ module.exports = function(RED) {
      */
     function armStalenessClock() {
       stopStalenessClock();
-      let staleMS = effectiveStaleMS();
+      const staleMS = effectiveStaleMS();
       if (staleMS <= 0) return;
 
       let earliest = null;
-      Object.keys(sources).forEach(function(t) {
-        let s = sources[t];
+      Object.keys(sources).forEach(function (t) {
+        const s = sources[t];
         if (s.seen && !s.stale && s.lastSeen !== null) {
-          if (earliest === null || s.lastSeen.getTime() < earliest) earliest = s.lastSeen.getTime();
+          if (earliest === null || s.lastSeen.getTime() < earliest)
+            earliest = s.lastSeen.getTime();
         }
       });
-      if (earliest === null) return;   // nothing fresh to expire
+      if (earliest === null) return; // nothing fresh to expire
 
-      let delay = (earliest + staleMS) - (new Date()).getTime();
+      let delay = earliest + staleMS - new Date().getTime();
       if (delay < 0) delay = 0;
       // Chaining beyond the 32-bit setTimeout ceiling falls out of the
       // re-arm design for free: cap the hop at maxTimeout, and an early
@@ -1003,14 +1179,18 @@ module.exports = function(RED) {
      */
     function onStalenessExpiry() {
       stalenessTimeout = null;
-      let staleMS = effectiveStaleMS();
+      const staleMS = effectiveStaleMS();
       if (staleMS <= 0) return;
 
-      let now = (new Date()).getTime();
-      let newlyStale = Object.keys(sources).filter(function(t) {
-        let s = sources[t];
-        return s.seen && !s.stale && s.lastSeen !== null &&
-               (now - s.lastSeen.getTime()) >= staleMS;
+      const now = new Date().getTime();
+      const newlyStale = Object.keys(sources).filter(function (t) {
+        const s = sources[t];
+        return (
+          s.seen &&
+          !s.stale &&
+          s.lastSeen !== null &&
+          now - s.lastSeen.getTime() >= staleMS
+        );
       });
 
       if (newlyStale.length === 0) {
@@ -1023,11 +1203,18 @@ module.exports = function(RED) {
       // Mark + recompute FIRST so every dispatched envelope reflects the
       // post-expiry world; then one SOURCESTALE per expired source; then
       // one evaluation pass for the lot.
-      newlyStale.forEach(function(t) { sources[t].stale = true; });
+      newlyStale.forEach(function (t) {
+        sources[t].stale = true;
+      });
       computeAggregate();
-      newlyStale.forEach(function(t) {
-        dispatchEvent(CONSENSUS_EVENT.SOURCESTALE, baselineMsg, false,
-                      EVENT_SOURCE.INTERNAL, { staleTopic: t });
+      newlyStale.forEach(function (t) {
+        dispatchEvent(
+          CONSENSUS_EVENT.SOURCESTALE,
+          baselineMsg,
+          false,
+          EVENT_SOURCE.INTERNAL,
+          { staleTopic: t },
+        );
       });
       evaluate(baselineMsg, EVENT_SOURCE.INTERNAL);
       writeState();
@@ -1057,10 +1244,18 @@ module.exports = function(RED) {
         heartbeatTimer = null;
       }
       if (node.heartbeatinterval > 0) {
-        let intervalMS = convertToMilliseconds(node.heartbeatinterval, node.heartbeatintervalunits);
+        const intervalMS = convertToMilliseconds(
+          node.heartbeatinterval,
+          node.heartbeatintervalunits,
+        );
         if (intervalMS > 0) {
-          heartbeatTimer = setInterval(function() {
-            dispatchEvent(CONSENSUS_EVENT.QUERY, baselineMsg, false, EVENT_SOURCE.INTERNAL);
+          heartbeatTimer = setInterval(function () {
+            dispatchEvent(
+              CONSENSUS_EVENT.QUERY,
+              baselineMsg,
+              false,
+              EVENT_SOURCE.INTERNAL,
+            );
           }, intervalMS);
         }
       }
@@ -1095,8 +1290,13 @@ module.exports = function(RED) {
      * drops.
      */
     function handleInputEvent(msg, isRestore) {
-      const msgPayload = typeof msg.payload === 'string' ? msg.payload.toLowerCase() : msg.payload;
-      const msgSource  = isRestore ? EVENT_SOURCE.INTERNAL : EVENT_SOURCE.EXTERNAL;
+      const msgPayload =
+        typeof msg.payload === "string"
+          ? msg.payload.toLowerCase()
+          : msg.payload;
+      const msgSource = isRestore
+        ? EVENT_SOURCE.INTERNAL
+        : EVENT_SOURCE.EXTERNAL;
 
       // -- Command gate ------------------------------------------------------
 
@@ -1142,14 +1342,19 @@ module.exports = function(RED) {
         // setstale) and the disabled flag deliberately SURVIVE a reset -
         // reset clears data, not configuration. Always succeeds, any state.
         sources = {};
-        node.expectedsources.forEach(function(topic) {
-          sources[topic] = { value: null, lastSeen: null, stale: false, seen: false };
+        node.expectedsources.forEach(function (topic) {
+          sources[topic] = {
+            value: null,
+            lastSeen: null,
+            stale: false,
+            seen: false,
+          };
         });
-        consensusState       = CONSENSUS_STATE.WAITING;
-        quorumOK             = null;   // fresh start: can't lose what you never had
+        consensusState = CONSENSUS_STATE.WAITING;
+        quorumOK = null; // fresh start: can't lose what you never had
         lastReportedMinority = [];
         computeAggregate();
-        armStalenessClock();           // clears - nothing fresh remains
+        armStalenessClock(); // clears - nothing fresh remains
         writeState();
         node.status(buildStatus());
         dispatchEvent(CONSENSUS_EVENT.RESET, msg, false, msgSource);
@@ -1157,17 +1362,21 @@ module.exports = function(RED) {
       }
 
       if (msgPayload === PAYLOAD.REMOVE) {
-        let removeTopic = msg.removetopic;
-        if (typeof removeTopic !== 'string' ||
-            !Object.prototype.hasOwnProperty.call(sources, removeTopic)) {
-          dispatchEvent(CONSENSUS_EVENT.SOURCEREMOVED, msg, true, msgSource,
-                        { removedTopic: removeTopic });
+        const removeTopic = msg.removetopic;
+        if (
+          typeof removeTopic !== "string" ||
+          !Object.prototype.hasOwnProperty.call(sources, removeTopic)
+        ) {
+          dispatchEvent(CONSENSUS_EVENT.SOURCEREMOVED, msg, true, msgSource, {
+            removedTopic: removeTopic,
+          });
           return;
         }
         delete sources[removeTopic];
         computeAggregate();
-        dispatchEvent(CONSENSUS_EVENT.SOURCEREMOVED, msg, false, msgSource,
-                      { removedTopic: removeTopic });
+        dispatchEvent(CONSENSUS_EVENT.SOURCEREMOVED, msg, false, msgSource, {
+          removedTopic: removeTopic,
+        });
         evaluate(msg, msgSource);
         armStalenessClock();
         writeState();
@@ -1178,9 +1387,13 @@ module.exports = function(RED) {
       if (msgPayload === PAYLOAD.SETTRIGGER) {
         let trigApplied = null;
         if (node.typemode === TYPE_MODE.BOOLEAN) {
-          trigApplied = parseBoolOverride(msg.settrigger, msg.settriggern, false);
+          trigApplied = parseBoolOverride(
+            msg.settrigger,
+            msg.settriggern,
+            false,
+          );
         } else {
-          let v = Number(msg.settrigger);
+          const v = Number(msg.settrigger);
           if (!isNaN(v)) {
             // Symmetric wrong-side guard (mirrors setrelease), but only
             // when a DISTINCT release exists - under release-follows-
@@ -1188,21 +1401,26 @@ module.exports = function(RED) {
             // together and can never invalidate the pair. An inverted
             // pair would flap outputs 1/2 on every reading in the band,
             // which is exactly what hysteresis exists to prevent.
-            let distinctRel = distinctRelease();
-            let wrongSide = distinctRel !== null &&
-              (node.triggerdir === TRIGGER_DIRECTION.BELOW ? v > distinctRel : v < distinctRel);
+            const distinctRel = distinctRelease();
+            const wrongSide =
+              distinctRel !== null &&
+              (node.triggerdir === TRIGGER_DIRECTION.BELOW
+                ? v > distinctRel
+                : v < distinctRel);
             if (!wrongSide) trigApplied = v;
           }
         }
         if (trigApplied === null) {
-          dispatchEvent(CONSENSUS_EVENT.TRIGGERSET, msg, true, msgSource,
-                        { triggerSet: msg.settrigger });
+          dispatchEvent(CONSENSUS_EVENT.TRIGGERSET, msg, true, msgSource, {
+            triggerSet: msg.settrigger,
+          });
           return;
         }
         overrideTrigger = trigApplied;
-        dispatchEvent(CONSENSUS_EVENT.TRIGGERSET, msg, false, msgSource,
-                      { triggerSet: trigApplied });
-        evaluate(msg, msgSource);   // takes effect immediately
+        dispatchEvent(CONSENSUS_EVENT.TRIGGERSET, msg, false, msgSource, {
+          triggerSet: trigApplied,
+        });
+        evaluate(msg, msgSource); // takes effect immediately
         writeState();
         node.status(buildStatus());
         return;
@@ -1213,43 +1431,52 @@ module.exports = function(RED) {
         if (node.typemode === TYPE_MODE.BOOLEAN) {
           relApplied = parseBoolOverride(msg.setrelease, msg.setreleasen, true);
         } else {
-          let v = Number(msg.setrelease);
+          const v = Number(msg.setrelease);
           if (!isNaN(v)) {
             // Validated against the trigger direction: the release value
             // must sit on the release side of the EFFECTIVE trigger
             // (override first, then config).
-            let effTrig = effectiveTrigger();
-            let wrongSide = effTrig !== null &&
-              (node.triggerdir === TRIGGER_DIRECTION.BELOW ? v < effTrig : v > effTrig);
+            const effTrig = effectiveTrigger();
+            const wrongSide =
+              effTrig !== null &&
+              (node.triggerdir === TRIGGER_DIRECTION.BELOW
+                ? v < effTrig
+                : v > effTrig);
             if (!wrongSide) relApplied = v;
           }
         }
         if (relApplied === null) {
-          dispatchEvent(CONSENSUS_EVENT.RELEASESET, msg, true, msgSource,
-                        { releaseSet: msg.setrelease });
+          dispatchEvent(CONSENSUS_EVENT.RELEASESET, msg, true, msgSource, {
+            releaseSet: msg.setrelease,
+          });
           return;
         }
         overrideRelease = relApplied;
-        dispatchEvent(CONSENSUS_EVENT.RELEASESET, msg, false, msgSource,
-                      { releaseSet: relApplied });
-        evaluate(msg, msgSource);   // takes effect immediately
+        dispatchEvent(CONSENSUS_EVENT.RELEASESET, msg, false, msgSource, {
+          releaseSet: relApplied,
+        });
+        evaluate(msg, msgSource); // takes effect immediately
         writeState();
         node.status(buildStatus());
         return;
       }
 
       if (msgPayload === PAYLOAD.SETSTALE) {
-        let staleUnits   = normalizeUnits(msg.setstaleunits);
-        let staleRaw     = Number(msg.setstale);
-        let staleApplied = isNaN(staleRaw) ? null : msgValueToMs(staleRaw, staleUnits);
+        const staleUnits = normalizeUnits(msg.setstaleunits);
+        const staleRaw = Number(msg.setstale);
+        const staleApplied = isNaN(staleRaw)
+          ? null
+          : msgValueToMs(staleRaw, staleUnits);
         if (staleApplied === null || staleApplied < 0) {
-          dispatchEvent(CONSENSUS_EVENT.STALESET, msg, true, msgSource,
-                        { staleSet: staleApplied === null ? msg.setstale : staleApplied });
+          dispatchEvent(CONSENSUS_EVENT.STALESET, msg, true, msgSource, {
+            staleSet: staleApplied === null ? msg.setstale : staleApplied,
+          });
           return;
         }
-        overrideStaleMS = staleApplied;   // 0 = staleness disabled
-        dispatchEvent(CONSENSUS_EVENT.STALESET, msg, false, msgSource,
-                      { staleSet: staleApplied });
+        overrideStaleMS = staleApplied; // 0 = staleness disabled
+        dispatchEvent(CONSENSUS_EVENT.STALESET, msg, false, msgSource, {
+          staleSet: staleApplied,
+        });
 
         // Takes effect immediately: every seen source's staleness flag is
         // re-evaluated against the new window, in BOTH directions - a
@@ -1260,26 +1487,39 @@ module.exports = function(RED) {
         // (external for a live setstale) since the incoming command is
         // what caused them - the one path where SOURCESTALE is not
         // internally sourced.
-        let nowMS   = (new Date()).getTime();
-        let staleMS = effectiveStaleMS();
-        let toStale = [];
-        let toFresh = [];
-        Object.keys(sources).forEach(function(t) {
-          let s = sources[t];
+        const nowMS = new Date().getTime();
+        const staleMS = effectiveStaleMS();
+        const toStale = [];
+        const toFresh = [];
+        Object.keys(sources).forEach(function (t) {
+          const s = sources[t];
           if (!s.seen || s.lastSeen === null) return;
-          let isStale = staleMS > 0 && (nowMS - s.lastSeen.getTime()) >= staleMS;
-          if (isStale  && !s.stale) toStale.push(t);
-          if (!isStale &&  s.stale) toFresh.push(t);
+          const isStale =
+            staleMS > 0 && nowMS - s.lastSeen.getTime() >= staleMS;
+          if (isStale && !s.stale) toStale.push(t);
+          if (!isStale && s.stale) toFresh.push(t);
         });
-        toStale.forEach(function(t) { sources[t].stale = true;  });
-        toFresh.forEach(function(t) { sources[t].stale = false; });
+        toStale.forEach(function (t) {
+          sources[t].stale = true;
+        });
+        toFresh.forEach(function (t) {
+          sources[t].stale = false;
+        });
         if (toStale.length > 0 || toFresh.length > 0) {
           computeAggregate();
-          toStale.forEach(function(t) {
-            dispatchEvent(CONSENSUS_EVENT.SOURCESTALE, msg, false, msgSource, { staleTopic: t });
+          toStale.forEach(function (t) {
+            dispatchEvent(CONSENSUS_EVENT.SOURCESTALE, msg, false, msgSource, {
+              staleTopic: t,
+            });
           });
-          toFresh.forEach(function(t) {
-            dispatchEvent(CONSENSUS_EVENT.SOURCERECOVERED, msg, false, msgSource, { recoveredTopic: t });
+          toFresh.forEach(function (t) {
+            dispatchEvent(
+              CONSENSUS_EVENT.SOURCERECOVERED,
+              msg,
+              false,
+              msgSource,
+              { recoveredTopic: t },
+            );
           });
           evaluate(msg, msgSource);
         }
@@ -1291,19 +1531,24 @@ module.exports = function(RED) {
 
       // -- Topic gate --------------------------------------------------------
 
-      if (typeof msg.topic !== 'string' || msg.topic.trim() === "") {
-        dispatchEvent(CONSENSUS_EVENT.READING, msg, true, msgSource, { rejectedValue: msg.payload });
+      if (typeof msg.topic !== "string" || msg.topic.trim() === "") {
+        dispatchEvent(CONSENSUS_EVENT.READING, msg, true, msgSource, {
+          rejectedValue: msg.payload,
+        });
         return;
       }
 
       // -- Coercion gate -----------------------------------------------------
 
-      let coerced = (node.typemode === TYPE_MODE.BOOLEAN)
-        ? coerceBoolean(msg.payload)
-        : coerceNumeric(msg.payload);
+      const coerced =
+        node.typemode === TYPE_MODE.BOOLEAN
+          ? coerceBoolean(msg.payload)
+          : coerceNumeric(msg.payload);
 
       if (!coerced.ok) {
-        dispatchEvent(CONSENSUS_EVENT.READING, msg, true, msgSource, { rejectedValue: msg.payload });
+        dispatchEvent(CONSENSUS_EVENT.READING, msg, true, msgSource, {
+          rejectedValue: msg.payload,
+        });
         return;
       }
 
@@ -1311,32 +1556,38 @@ module.exports = function(RED) {
 
       // One message, one reading-class event: the most specific of
       // SOURCEADDED / SOURCERECOVERED / READING, decided BEFORE mutating.
-      let topic    = msg.topic;
-      let existing = sources[topic];
+      const topic = msg.topic;
+      const existing = sources[topic];
       let readingEvent;
       let readingExtras = null;
 
       if (!existing || !existing.seen) {
-        readingEvent  = CONSENSUS_EVENT.SOURCEADDED;
+        readingEvent = CONSENSUS_EVENT.SOURCEADDED;
         readingExtras = { addedTopic: topic };
       } else if (existing.stale) {
-        readingEvent  = CONSENSUS_EVENT.SOURCERECOVERED;
+        readingEvent = CONSENSUS_EVENT.SOURCERECOVERED;
         readingExtras = { recoveredTopic: topic };
       } else {
-        readingEvent  = CONSENSUS_EVENT.READING;
+        readingEvent = CONSENSUS_EVENT.READING;
       }
 
-      sources[topic] = { value: coerced.value, lastSeen: new Date(), stale: false, seen: true };
-      baselineMsg    = msg;
+      sources[topic] = {
+        value: coerced.value,
+        lastSeen: new Date(),
+        stale: false,
+        seen: true,
+      };
+      baselineMsg = msg;
 
-      let prevAggregate = aggregate;
+      const prevAggregate = aggregate;
       computeAggregate();
 
       // READING is subject to emit-on-change-only; SOURCEADDED and
       // SOURCERECOVERED are always noteworthy and always emitted.
-      let suppressReading = (readingEvent === CONSENSUS_EVENT.READING) &&
-                            node.emitonchange &&
-                            aggregate === prevAggregate;
+      const suppressReading =
+        readingEvent === CONSENSUS_EVENT.READING &&
+        node.emitonchange &&
+        aggregate === prevAggregate;
       if (!suppressReading) {
         dispatchEvent(readingEvent, msg, false, msgSource, readingExtras);
       }
@@ -1360,36 +1611,53 @@ module.exports = function(RED) {
           fs.mkdirSync(path.dirname(stateFile), { recursive: true });
         }
         // Serialize per-source lastSeen as ISO strings.
-        let persistSources = {};
-        Object.keys(sources).forEach(function(t) {
+        const persistSources = {};
+        Object.keys(sources).forEach(function (t) {
           persistSources[t] = {
-            value:    sources[t].value,
-            lastSeen: sources[t].lastSeen ? sources[t].lastSeen.toISOString() : null,
-            seen:     sources[t].seen
+            value: sources[t].value,
+            lastSeen: sources[t].lastSeen
+              ? sources[t].lastSeen.toISOString()
+              : null,
+            seen: sources[t].seen,
             // stale is deliberately NOT persisted - it is recomputed
             // against wall-clock time on restore.
           };
         });
-        fs.writeFileSync(stateFile, JSON.stringify(JSON.decycle({
-          sources:         persistSources,
-          consensusState:  consensusState,
-          disabled:        disabled,
-          overrideTrigger: overrideTrigger,
-          overrideRelease: overrideRelease,
-          overrideStaleMS: overrideStaleMS,
-          baselineMsg:     baselineMsg !== null ? baselineMsg : {}
-        })));
+        fs.writeFileSync(
+          stateFile,
+          JSON.stringify(
+            JSON.decycle({
+              sources: persistSources,
+              consensusState: consensusState,
+              disabled: disabled,
+              overrideTrigger: overrideTrigger,
+              overrideRelease: overrideRelease,
+              overrideStaleMS: overrideStaleMS,
+              baselineMsg: baselineMsg !== null ? baselineMsg : {},
+            }),
+          ),
+        );
       } catch (error) {
-        node.error("Error writing persistent file for sensor-consensus node " + node.id.toString() + "\n\n" + error.toString());
+        node.error(
+          "Error writing persistent file for sensor-consensus node " +
+            node.id.toString() +
+            "\n\n" +
+            error.toString(),
+        );
       }
     }
 
     function readState() {
       try {
-        let contents = fs.readFileSync(stateFile).toString();
-        if (typeof contents !== 'undefined') return contents;
+        const contents = fs.readFileSync(stateFile).toString();
+        if (typeof contents !== "undefined") return contents;
       } catch (error) {
-        node.error("Error reading persistent file for sensor-consensus node " + node.id.toString() + "\n\n" + error.toString());
+        node.error(
+          "Error reading persistent file for sensor-consensus node " +
+            node.id.toString() +
+            "\n\n" +
+            error.toString(),
+        );
       }
       return -1;
     }
@@ -1398,10 +1666,15 @@ module.exports = function(RED) {
       try {
         if (fs.existsSync(stateFile)) fs.unlinkSync(stateFile);
       } catch (error) {
-        node.error("Error deleting persistent file for sensor-consensus node " + node.id.toString() + "\n\n" + error.toString());
+        node.error(
+          "Error deleting persistent file for sensor-consensus node " +
+            node.id.toString() +
+            "\n\n" +
+            error.toString(),
+        );
       }
     }
   }
 
   RED.nodes.registerType("sensor-consensus", SensorConsensus);
-}
+};

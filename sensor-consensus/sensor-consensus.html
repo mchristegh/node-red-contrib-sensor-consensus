@@ -21,360 +21,374 @@
 -->
 
 <script type="text/javascript">
-    RED.nodes.registerType('sensor-consensus',{
-        category: 'function',
-        color:"#869869",
-        defaults: {
-            name: {value:""},
-            typemode: {value:"numeric"},
-            aggregation: {value:"mean"},
-            triggerdir: {value:"above"},
-            // Blank is meaningful (numeric mode: "not set - never
-            // triggers"; boolean mode: unused), so both threshold fields
-            // validate as blank-or-number rather than required.
-            triggervalue: {value:"", validate:function(v) { return v === "" || !isNaN(Number(v)); }},
-            releasevalue: {value:"", validate:function(v) { return v === "" || !isNaN(Number(v)); }},
-            boolrule: {value:"majority"},
-            boolrulen: {value:"1"},
-            boolreleaserule: {value:"sameastrigger"},
-            boolreleasen: {value:"1"},
-            truevalues: {value:""},
-            falsevalues: {value:""},
-            expectedsources: {value:""},
-            quorum: {value:"0"},
-            stalewindow: {value:"0"},
-            stalewindowunits: {value:"Second"},
-            quorumlostpolicy: {value:"hold"},
-            emitonchange: {value:true},
-            heartbeatinterval: {value:"0"},
-            heartbeatintervalunits: {value:"Second"},
-            persist: {value:false}
+  RED.nodes.registerType("sensor-consensus", {
+    category: "function",
+    color: "#869869",
+    defaults: {
+      name: { value: "" },
+      typemode: { value: "numeric" },
+      aggregation: { value: "mean" },
+      triggerdir: { value: "above" },
+      // Blank is meaningful (numeric mode: "not set - never
+      // triggers"; boolean mode: unused), so both threshold fields
+      // validate as blank-or-number rather than required.
+      triggervalue: {
+        value: "",
+        validate: function (v) {
+          return v === "" || !isNaN(Number(v));
         },
-        inputs:1,
-        outputs:4,
-        icon: "font-awesome/fa-bar-chart",
-        label: function() {
-            if (this.name) return this.name;
-            if (this.typemode === "boolean") {
-                var rule = this.boolrule === "atleastn"
-                    ? ("at least " + this.boolrulen)
-                    : this.boolrule;
-                return "Consensus: " + rule;
-            }
-            var dir = this.triggerdir === "below" ? "\u2264" : "\u2265";
-            var trig = (this.triggervalue === "" || this.triggervalue == null) ? "?" : this.triggervalue;
-            return "Consensus: " + this.aggregation + " " + dir + " " + trig;
+      },
+      releasevalue: {
+        value: "",
+        validate: function (v) {
+          return v === "" || !isNaN(Number(v));
         },
-        labelStyle: function() {
-            return this.name?"node_label_italic":"";
-        },
-        paletteLabel: "Sensor Consensus",
-        outputLabels: ["Trigger","Release","Query","Events"],
-        oneditprepare: function() {
-            $("#node-input-typemode").val(this.typemode);
-            $("#node-input-aggregation").val(this.aggregation);
-            $("#node-input-triggerdir").val(this.triggerdir);
-            $("#node-input-boolrule").val(this.boolrule);
-            $("#node-input-boolreleaserule").val(this.boolreleaserule);
-            $("#node-input-stalewindowunits").val(this.stalewindowunits);
-            $("#node-input-quorumlostpolicy").val(this.quorumlostpolicy);
-            $("#node-input-heartbeatintervalunits").val(this.heartbeatintervalunits);
+      },
+      boolrule: { value: "majority" },
+      boolrulen: { value: "1" },
+      boolreleaserule: { value: "sameastrigger" },
+      boolreleasen: { value: "1" },
+      truevalues: { value: "" },
+      falsevalues: { value: "" },
+      expectedsources: { value: "" },
+      quorum: { value: "0" },
+      stalewindow: { value: "0" },
+      stalewindowunits: { value: "Second" },
+      quorumlostpolicy: { value: "hold" },
+      emitonchange: { value: true },
+      heartbeatinterval: { value: "0" },
+      heartbeatintervalunits: { value: "Second" },
+      persist: { value: false },
+    },
+    inputs: 1,
+    outputs: 4,
+    icon: "font-awesome/fa-bar-chart",
+    label: function () {
+      if (this.name) return this.name;
+      if (this.typemode === "boolean") {
+        var rule =
+          this.boolrule === "atleastn"
+            ? "at least " + this.boolrulen
+            : this.boolrule;
+        return "Consensus: " + rule;
+      }
+      var dir = this.triggerdir === "below" ? "\u2264" : "\u2265";
+      var trig =
+        this.triggervalue === "" || this.triggervalue == null
+          ? "?"
+          : this.triggervalue;
+      return "Consensus: " + this.aggregation + " " + dir + " " + trig;
+    },
+    labelStyle: function () {
+      return this.name ? "node_label_italic" : "";
+    },
+    paletteLabel: "Sensor Consensus",
+    outputLabels: ["Trigger", "Release", "Query", "Events"],
+    oneditprepare: function () {
+      $("#node-input-typemode").val(this.typemode);
+      $("#node-input-aggregation").val(this.aggregation);
+      $("#node-input-triggerdir").val(this.triggerdir);
+      $("#node-input-boolrule").val(this.boolrule);
+      $("#node-input-boolreleaserule").val(this.boolreleaserule);
+      $("#node-input-stalewindowunits").val(this.stalewindowunits);
+      $("#node-input-quorumlostpolicy").val(this.quorumlostpolicy);
+      $("#node-input-heartbeatintervalunits").val(this.heartbeatintervalunits);
 
-            function updateVisibility() {
-                var mode = $("#node-input-typemode").val();
-                if (mode === "boolean") {
-                    $("#sc-numeric-rows").hide();
-                    $("#sc-boolean-rows").show();
-                } else {
-                    $("#sc-numeric-rows").show();
-                    $("#sc-boolean-rows").hide();
-                }
-                if ($("#node-input-boolrule").val() === "atleastn") {
-                    $("#sc-boolrulen-row").show();
-                } else {
-                    $("#sc-boolrulen-row").hide();
-                }
-                if ($("#node-input-boolreleaserule").val() === "atleastn") {
-                    $("#sc-boolreleasen-row").show();
-                } else {
-                    $("#sc-boolreleasen-row").hide();
-                }
-            }
-
-            $("#node-input-typemode").on("change", updateVisibility);
-            $("#node-input-boolrule").on("change", updateVisibility);
-            $("#node-input-boolreleaserule").on("change", updateVisibility);
-            updateVisibility();
+      function updateVisibility() {
+        var mode = $("#node-input-typemode").val();
+        if (mode === "boolean") {
+          $("#sc-numeric-rows").hide();
+          $("#sc-boolean-rows").show();
+        } else {
+          $("#sc-numeric-rows").show();
+          $("#sc-boolean-rows").hide();
         }
-    });
+        if ($("#node-input-boolrule").val() === "atleastn") {
+          $("#sc-boolrulen-row").show();
+        } else {
+          $("#sc-boolrulen-row").hide();
+        }
+        if ($("#node-input-boolreleaserule").val() === "atleastn") {
+          $("#sc-boolreleasen-row").show();
+        } else {
+          $("#sc-boolreleasen-row").hide();
+        }
+      }
+
+      $("#node-input-typemode").on("change", updateVisibility);
+      $("#node-input-boolrule").on("change", updateVisibility);
+      $("#node-input-boolreleaserule").on("change", updateVisibility);
+      updateVisibility();
+    },
+  });
 </script>
 
 <script type="text/x-red" data-template-name="sensor-consensus">
-    <div class="form-row">
-        <i class="fa fa-random"></i>
-        <label for="node-input-typemode"> Type Mode</label>
-        <select id="node-input-typemode">
-            <option value="numeric">Numeric</option>
-            <option value="boolean">Boolean</option>
-        </select>
-    </div>
-    <div id="sc-numeric-rows">
-        <div class="form-row">
-            <i class="fa fa-calculator"></i>
-            <label for="node-input-aggregation"> Aggregation</label>
-            <select id="node-input-aggregation">
-                <option value="mean">Mean</option>
-                <option value="median">Median</option>
-                <option value="min">Min</option>
-                <option value="max">Max</option>
-                <option value="trimmedmean">Trimmed Mean</option>
-            </select>
-        </div>
-        <div class="form-row">
-            <i class="fa fa-arrows-v"></i>
-            <label for="node-input-triggerdir"> Trigger When</label>
-            <select id="node-input-triggerdir">
-                <option value="above">Aggregate &ge; Trigger Value</option>
-                <option value="below">Aggregate &le; Trigger Value</option>
-            </select>
-        </div>
-        <div class="form-row">
-            <i class="fa fa-bolt"></i>
-            <label for="node-input-triggervalue"> Trigger Value</label>
-            <input type="text" id="node-input-triggervalue" style="width:120px" placeholder="not set">
-        </div>
-        <div class="form-row">
-            <i class="fa fa-undo"></i>
-            <label for="node-input-releasevalue"> Release Value</label>
-            <input type="text" id="node-input-releasevalue" style="width:120px" placeholder="Same as trigger">
-        </div>
-    </div>
-    <div id="sc-boolean-rows">
-        <div class="form-row">
-            <i class="fa fa-check-square-o"></i>
-            <label for="node-input-boolrule"> Trigger Rule</label>
-            <select id="node-input-boolrule">
-                <option value="any">Any true</option>
-                <option value="majority">Majority true</option>
-                <option value="all">All true</option>
-                <option value="atleastn">At least N true</option>
-            </select>
-        </div>
-        <div class="form-row" id="sc-boolrulen-row">
-            <i class="fa fa-hashtag"></i>
-            <label for="node-input-boolrulen"> Trigger N</label>
-            <input type="number" id="node-input-boolrulen" min="1" style="width:100px">
-        </div>
-        <div class="form-row">
-            <i class="fa fa-undo"></i>
-            <label for="node-input-boolreleaserule"> Release Rule</label>
-            <select id="node-input-boolreleaserule">
-                <option value="sameastrigger">Same as trigger</option>
-                <option value="any">Below: Any true</option>
-                <option value="majority">Below: Majority true</option>
-                <option value="all">Below: All true</option>
-                <option value="atleastn">Below: At least N true</option>
-            </select>
-        </div>
-        <div class="form-row" id="sc-boolreleasen-row">
-            <i class="fa fa-hashtag"></i>
-            <label for="node-input-boolreleasen"> Release N</label>
-            <input type="number" id="node-input-boolreleasen" min="1" style="width:100px">
-        </div>
-        <div class="form-row">
-            <i class="fa fa-check"></i>
-            <label for="node-input-truevalues"> True Values</label>
-            <input type="text" id="node-input-truevalues" placeholder="true, on, yes, 1">
-        </div>
-        <div class="form-row">
-            <i class="fa fa-times"></i>
-            <label for="node-input-falsevalues"> False Values</label>
-            <input type="text" id="node-input-falsevalues" placeholder="false, off, no, 0">
-        </div>
-    </div>
-    <hr>
-    <div class="form-row">
-        <i class="fa fa-list"></i>
-        <label for="node-input-expectedsources"> Expected Sources</label>
-        <input type="text" id="node-input-expectedsources" placeholder="topic1, topic2 (blank = learn dynamically)">
-    </div>
-    <div class="form-row">
-        <i class="fa fa-users"></i>
-        <label for="node-input-quorum"> Quorum</label>
-        <input type="number" id="node-input-quorum" min="0" style="width:100px">
-    </div>
-    <div class="form-row">
-        <i class="fa fa-hourglass-half"></i>
-        <label for="node-input-stalewindow"> Staleness Window</label>
-        <input type="number" id="node-input-stalewindow" min="0" style="width:100px">
-    </div>
-    <div class="form-row">
-        <label for="node-input-stalewindowunits"> Staleness Units</label>
-        <select id="node-input-stalewindowunits">
-            <option value="Millisecond">Milliseconds</option>
-            <option value="Second">Seconds</option>
-            <option value="Minute">Minutes</option>
-            <option value="Hour">Hours</option>
-        </select>
-    </div>
-    <div class="form-row">
-        <i class="fa fa-shield"></i>
-        <label for="node-input-quorumlostpolicy"> On Quorum Lost While Latched</label>
-        <select id="node-input-quorumlostpolicy">
-            <option value="hold">Hold (keep last consensus)</option>
-            <option value="release">Release (fail-safe)</option>
-        </select>
-    </div>
-    <hr>
-    <div class="form-row">
-        <i class="fa fa-filter"></i>
-        <label style="width:auto" for="node-input-emitonchange"> Emit aggregate on change only</label>
-        <input type="checkbox" id="node-input-emitonchange" style="display:inline-block; width:auto; vertical-align:top;">
-    </div>
-    <hr>
-    <div class="form-row">
-        <i class="fa fa-heart-o"></i>
-        <label for="node-input-heartbeatinterval"> Heartbeat Interval</label>
-        <input type="number" id="node-input-heartbeatinterval" min="0" style="width:100px">
-    </div>
-    <div class="form-row">
-        <label for="node-input-heartbeatintervalunits"> Heartbeat Units</label>
-        <select id="node-input-heartbeatintervalunits">
-            <option value="Millisecond">Milliseconds</option>
-            <option value="Second">Seconds</option>
-            <option value="Minute">Minutes</option>
-            <option value="Hour">Hours</option>
-        </select>
-    </div>
-    <hr>
-    <div class="form-row">
-        <i class="fa fa-floppy-o"></i>
-        <label style="width:auto" for="node-input-persist"> Resume state on deploy/restart</label>
-        <input type="checkbox" id="node-input-persist" style="display:inline-block; width:auto; vertical-align:top;">
-    </div>
-    <hr>
-    <div class="form-row">
-        <i class="fa fa-tag"></i>
-        <label for="node-input-name"> Name</label>
-        <input type="text" id="node-input-name" placeholder="Name"></input>
-    </div>
+  <div class="form-row">
+      <i class="fa fa-random"></i>
+      <label for="node-input-typemode"> Type Mode</label>
+      <select id="node-input-typemode">
+          <option value="numeric">Numeric</option>
+          <option value="boolean">Boolean</option>
+      </select>
+  </div>
+  <div id="sc-numeric-rows">
+      <div class="form-row">
+          <i class="fa fa-calculator"></i>
+          <label for="node-input-aggregation"> Aggregation</label>
+          <select id="node-input-aggregation">
+              <option value="mean">Mean</option>
+              <option value="median">Median</option>
+              <option value="min">Min</option>
+              <option value="max">Max</option>
+              <option value="trimmedmean">Trimmed Mean</option>
+          </select>
+      </div>
+      <div class="form-row">
+          <i class="fa fa-arrows-v"></i>
+          <label for="node-input-triggerdir"> Trigger When</label>
+          <select id="node-input-triggerdir">
+              <option value="above">Aggregate &ge; Trigger Value</option>
+              <option value="below">Aggregate &le; Trigger Value</option>
+          </select>
+      </div>
+      <div class="form-row">
+          <i class="fa fa-bolt"></i>
+          <label for="node-input-triggervalue"> Trigger Value</label>
+          <input type="text" id="node-input-triggervalue" style="width:120px" placeholder="not set">
+      </div>
+      <div class="form-row">
+          <i class="fa fa-undo"></i>
+          <label for="node-input-releasevalue"> Release Value</label>
+          <input type="text" id="node-input-releasevalue" style="width:120px" placeholder="Same as trigger">
+      </div>
+  </div>
+  <div id="sc-boolean-rows">
+      <div class="form-row">
+          <i class="fa fa-check-square-o"></i>
+          <label for="node-input-boolrule"> Trigger Rule</label>
+          <select id="node-input-boolrule">
+              <option value="any">Any true</option>
+              <option value="majority">Majority true</option>
+              <option value="all">All true</option>
+              <option value="atleastn">At least N true</option>
+          </select>
+      </div>
+      <div class="form-row" id="sc-boolrulen-row">
+          <i class="fa fa-hashtag"></i>
+          <label for="node-input-boolrulen"> Trigger N</label>
+          <input type="number" id="node-input-boolrulen" min="1" style="width:100px">
+      </div>
+      <div class="form-row">
+          <i class="fa fa-undo"></i>
+          <label for="node-input-boolreleaserule"> Release Rule</label>
+          <select id="node-input-boolreleaserule">
+              <option value="sameastrigger">Same as trigger</option>
+              <option value="any">Below: Any true</option>
+              <option value="majority">Below: Majority true</option>
+              <option value="all">Below: All true</option>
+              <option value="atleastn">Below: At least N true</option>
+          </select>
+      </div>
+      <div class="form-row" id="sc-boolreleasen-row">
+          <i class="fa fa-hashtag"></i>
+          <label for="node-input-boolreleasen"> Release N</label>
+          <input type="number" id="node-input-boolreleasen" min="1" style="width:100px">
+      </div>
+      <div class="form-row">
+          <i class="fa fa-check"></i>
+          <label for="node-input-truevalues"> True Values</label>
+          <input type="text" id="node-input-truevalues" placeholder="true, on, yes, 1">
+      </div>
+      <div class="form-row">
+          <i class="fa fa-times"></i>
+          <label for="node-input-falsevalues"> False Values</label>
+          <input type="text" id="node-input-falsevalues" placeholder="false, off, no, 0">
+      </div>
+  </div>
+  <hr>
+  <div class="form-row">
+      <i class="fa fa-list"></i>
+      <label for="node-input-expectedsources"> Expected Sources</label>
+      <input type="text" id="node-input-expectedsources" placeholder="topic1, topic2 (blank = learn dynamically)">
+  </div>
+  <div class="form-row">
+      <i class="fa fa-users"></i>
+      <label for="node-input-quorum"> Quorum</label>
+      <input type="number" id="node-input-quorum" min="0" style="width:100px">
+  </div>
+  <div class="form-row">
+      <i class="fa fa-hourglass-half"></i>
+      <label for="node-input-stalewindow"> Staleness Window</label>
+      <input type="number" id="node-input-stalewindow" min="0" style="width:100px">
+  </div>
+  <div class="form-row">
+      <label for="node-input-stalewindowunits"> Staleness Units</label>
+      <select id="node-input-stalewindowunits">
+          <option value="Millisecond">Milliseconds</option>
+          <option value="Second">Seconds</option>
+          <option value="Minute">Minutes</option>
+          <option value="Hour">Hours</option>
+      </select>
+  </div>
+  <div class="form-row">
+      <i class="fa fa-shield"></i>
+      <label for="node-input-quorumlostpolicy"> On Quorum Lost While Latched</label>
+      <select id="node-input-quorumlostpolicy">
+          <option value="hold">Hold (keep last consensus)</option>
+          <option value="release">Release (fail-safe)</option>
+      </select>
+  </div>
+  <hr>
+  <div class="form-row">
+      <i class="fa fa-filter"></i>
+      <label style="width:auto" for="node-input-emitonchange"> Emit aggregate on change only</label>
+      <input type="checkbox" id="node-input-emitonchange" style="display:inline-block; width:auto; vertical-align:top;">
+  </div>
+  <hr>
+  <div class="form-row">
+      <i class="fa fa-heart-o"></i>
+      <label for="node-input-heartbeatinterval"> Heartbeat Interval</label>
+      <input type="number" id="node-input-heartbeatinterval" min="0" style="width:100px">
+  </div>
+  <div class="form-row">
+      <label for="node-input-heartbeatintervalunits"> Heartbeat Units</label>
+      <select id="node-input-heartbeatintervalunits">
+          <option value="Millisecond">Milliseconds</option>
+          <option value="Second">Seconds</option>
+          <option value="Minute">Minutes</option>
+          <option value="Hour">Hours</option>
+      </select>
+  </div>
+  <hr>
+  <div class="form-row">
+      <i class="fa fa-floppy-o"></i>
+      <label style="width:auto" for="node-input-persist"> Resume state on deploy/restart</label>
+      <input type="checkbox" id="node-input-persist" style="display:inline-block; width:auto; vertical-align:top;">
+  </div>
+  <hr>
+  <div class="form-row">
+      <i class="fa fa-tag"></i>
+      <label for="node-input-name"> Name</label>
+      <input type="text" id="node-input-name" placeholder="Name"></input>
+  </div>
 </script>
 
 <script type="text/x-red" data-help-name="sensor-consensus">
-    <p><B>General usage</B><br>
-      A sensor-fusion / consensus node. Readings from multiple sensors (keyed by <code>msg.topic</code>) are fused into a single trusted aggregate, and a trigger latches when that aggregate crosses a configured threshold. The node holds exactly one <i>latest</i> value per source — it is not a statistics/history node — and treats freshness (staleness windows), quorum, and disagreement detection as first-class features. All control commands in <code>msg.payload</code> are <b>case insensitive</b>.
-    </p>
-    <p><B>Outputs</B><br>
-      <ul>
-        <li><b>1 - Trigger</b> — fires only on a genuine <code>untriggered</code> → <code>triggered</code> transition. Never fires for a suppressed or blocked attempt.</li>
-        <li><b>2 - Release</b> — fires only on a genuine <code>triggered</code> → <code>untriggered</code> transition: the release threshold re-crossed, or quorum lost under the Release policy. Never fires for a suppressed or blocked attempt.</li>
-        <li><b>3 - Query</b> — fires in response to an incoming <code>query</code> message, or automatically on each Heartbeat tick. Always carries a full status snapshot.</li>
-        <li><b>4 - Events</b> — fires for every other event, including duplicate copies of Trigger and Release events. This is the only output where <code>msg.ignored</code> can be <code>true</code>.</li>
-      </ul>
-      Outputs 1 and 2 never carry an ignored message — anything that didn't truly happen only ever appears on output 4.
-    </p>
-    <p><B>Message properties on all outputs</B><br>
-      Every output message is a clone of the message that triggered it (or, for events with no live trigger of their own — staleness expiry, a Heartbeat tick, a restore — a clone of the most recent accepted reading's message) with the following properties added:
-      <ul>
-        <li><code>msg.consensusEvent</code> — the event type, see the list below</li>
-        <li><code>msg.consensusState</code> — <code>waiting</code>, <code>untriggered</code>, or <code>triggered</code></li>
-        <li><code>msg.aggregate</code> — the current aggregate value (the fraction of fresh sources reporting true in Boolean mode); <code>null</code> while no data</li>
-        <li><code>msg.aggregation</code> — the aggregation function actually used, e.g. <code>mean</code>, <code>trimmedmean</code>, <code>mean(fallback)</code>, <code>fraction</code></li>
-        <li><code>msg.quorum</code> — whether quorum is currently satisfied (always <code>true</code> when quorum is disabled)</li>
-        <li><code>msg.freshCount</code> / <code>msg.sourceCount</code> — fresh sources vs. all known sources</li>
-        <li><code>msg.sources</code> — per-source breakdown: <code>{ topic: { value, lastSeen, stale, seen } }</code></li>
-        <li><code>msg.disabled</code> — current disabled state as a boolean</li>
-        <li><code>msg.ignored</code> — <code>true</code> if this message was received but did not change the node's state (always <code>false</code> on outputs 1, 2, and 3)</li>
-        <li><code>msg.source</code> — <code>"external"</code> if a live incoming message triggered this event, or <code>"internal"</code> if the node itself did (staleness expiry, Heartbeat tick, restore)</li>
-      </ul>
-      Event-specific extras (<code>releaseReason</code>, <code>rejectedValue</code>, <code>staleTopic</code>, <code>recoveredTopic</code>, <code>addedTopic</code>, <code>removedTopic</code>, <code>minorityTopics</code>, <code>triggerSet</code>, <code>releaseSet</code>, <code>staleSet</code>) are added only to the relevant events — including <i>rejected</i> attempts, so a downstream consumer can see what was refused.
-      <br><br>
-      Envelopes reflect the instant of dispatch: events fire in causal order and are never re-stamped with knowledge of the later events they cause. For example, a <code>sourcestale</code> whose expiry costs the quorum still shows the pre-update <code>quorum: true</code> — the <code>quorumlost</code> that follows immediately is the correction.
-    </p>
-    <p><B>Event types (<code>msg.consensusEvent</code>)</B><br>
-      <ul>
-        <li><code>triggered</code> — the trigger latched (output 1 + 4), or a transition suppressed while disabled (output 4 only, <code>ignored:true</code>)</li>
-        <li><code>released</code> — the latch released (output 2 + 4), with <code>msg.releaseReason</code> of <code>threshold</code> or <code>quorumlost</code>; or a suppressed transition (output 4 only, <code>ignored:true</code>)</li>
-        <li><code>reading</code> — an accepted reading from a known fresh source (output 4 only; may be suppressed by <i>Emit aggregate on change only</i>), or a rejected reading — uncoercible payload or missing topic (<code>ignored:true</code>, always emitted, with <code>msg.rejectedValue</code>)</li>
-        <li><code>sourceadded</code> — first reading from a new topic (output 4 only, always emitted)</li>
-        <li><code>sourcerecovered</code> — a reading from a stale source, or a source freshened by a widened <code>setstale</code> (output 4 only, always emitted)</li>
-        <li><code>sourcestale</code> — a source aged past the staleness window (output 4 only): internally sourced on a clock expiry or restore, externally sourced when a <code>setstale</code> shrink expires it on the spot</li>
-        <li><code>sourceremoved</code> — a source dropped via the <code>remove</code> command, or an unknown-topic attempt (<code>ignored:true</code>) (output 4 only)</li>
-        <li><code>quorumlost</code> / <code>quorumregained</code> — the fresh-source count crossed the quorum boundary (output 4 only)</li>
-        <li><code>minorityreport</code> — Boolean mode: the set of fresh sources disagreeing with the consensus changed; <code>msg.minorityTopics</code> carries the new set, including an empty set when a disagreement resolves (output 4 only)</li>
-        <li><code>disabled</code> / <code>enabled</code> — transitions suppressed / re-allowed, or a redundant attempt (<code>ignored:true</code>) (output 4 only)</li>
-        <li><code>reset</code> — learned sources, values, and the latch cleared (output 4 only)</li>
-        <li><code>triggerset</code> / <code>releaseset</code> / <code>staleset</code> — a runtime threshold or staleness change, or an invalid/wrong-side attempt (<code>ignored:true</code>, attempted value included) (output 4 only)</li>
-        <li><code>query</code> — a status snapshot, requested via a <code>query</code> message or produced by a Heartbeat tick (output 3 only)</li>
-      </ul>
-      The event name always tells you what was <i>attempted</i>; <code>msg.ignored</code> tells you whether it took effect. A single incoming reading emits exactly one reading-class event — the most specific of <code>sourceadded</code> / <code>sourcerecovered</code> / <code>reading</code> — and any quorum or trigger/release transitions it causes follow as separate events, in causal order.
-    </p>
-    <p><B>Control Commands</B><br>
-      All control commands are case insensitive, and a recognized command always wins over value coercion — so a command word can never be used as a Boolean true/false value. The following commands are supported:
-      <ul>
-        <li><code>query</code> — returns a full state snapshot on output 3 without affecting the node</li>
-        <li><code>disable</code> — suppresses Trigger/Release transitions. Readings are still accepted, staleness and quorum tracking continue — only the latch is frozen. A warranted transition while disabled appears on output 4 with <code>ignored:true</code>.</li>
-        <li><code>enable</code> — re-allows transitions and immediately re-evaluates: a transition suppressed while disabled fires genuinely at that moment (outputs 1/2 + 4)</li>
-        <li><code>reset</code> — clears all learned sources, values, and the latch, returning to <code>waiting</code>. Expected sources stay on the roster as never-seen. Runtime overrides and the disabled flag survive — reset clears data, not configuration.</li>
-        <li><code>remove</code> — drops one source named in <code>msg.removetopic</code> (for a decommissioned sensor) and re-evaluates</li>
-        <li><code>settrigger</code> — sets the trigger at runtime. Numeric mode: <code>msg.settrigger</code> is a number. Boolean mode: a preset name (<code>any</code>, <code>majority</code>, <code>all</code>, <code>atleastn</code> with its count in <code>msg.settriggern</code>) or a fraction 0–1.</li>
-        <li><code>setrelease</code> — sets the release at runtime; same forms as <code>settrigger</code> plus <code>sameastrigger</code>, with <code>msg.setreleasen</code> for a count</li>
-        <li><code>setstale</code> — sets the staleness window: <code>msg.setstale</code> plus optional <code>msg.setstaleunits</code>; <code>0</code> disables staleness. Takes effect immediately in <b>both</b> directions — a shrunk window can fire <code>sourcestale</code> on the spot, a widened or disabled one can fire <code>sourcerecovered</code> for data now back inside it.</li>
-      </ul>
-      Set-commands re-evaluate the trigger immediately. Invalid or wrong-side values are surfaced solely as <code>ignored:true</code> events on output 4 with the attempted value attached — there are no debug-log warnings to watch for.
-    </p>
-    <p><B>Type Modes</B><br>
-      One node instance = one type mode = one group of like sensors. Mixing humidity readings and door contacts in a single instance has no coherent meaning — deploy one instance per group.
-      <ul>
-        <li><b>Numeric</b> — payloads are converted with <code>Number()</code>; anything unparseable is rejected. The aggregate is the configured function over the fresh sources' latest values: Mean, Median, Min, Max, or Trimmed Mean (drops the single highest and lowest; needs at least 3 fresh sources, below which it silently falls back to Mean and reports <code>mean(fallback)</code> in the envelope).</li>
-        <li><b>Boolean</b> — payloads are matched (case-insensitively, trimmed) against the True/False value lists; native <code>true</code>/<code>false</code> and <code>1</code>/<code>0</code> always coerce. Anything matching neither list is rejected. The default lists are <code>true, on, yes, 1</code> and <code>false, off, no, 0</code>; entering custom lists <i>replaces</i> the defaults (e.g. <code>open</code> / <code>closed</code> for door contacts). The aggregate is the fraction of fresh sources reporting true (0.0–1.0).</li>
-      </ul>
-    </p>
-    <p><B>Trigger and Release</B><br>
-      In Numeric mode, <i>Trigger When</i> selects the direction: trigger when the aggregate rises to or above the Trigger Value, or falls to or below it. The Release Value sits on the opposite side and provides hysteresis; release uses strict inequality past it (Above-mode releases when the aggregate drops <i>below</i> the release value), so with no hysteresis an aggregate sitting exactly on the threshold stays latched instead of flapping.
-      <br><br>
-      Leaving the Release Value blank means <b>same as trigger</b>, and this follows dynamically: a runtime <code>settrigger</code> moves both thresholds together. Once a <i>distinct</i> release exists (configured, or set via <code>setrelease</code>), <code>settrigger</code> and <code>setrelease</code> guard each other symmetrically — a value that would invert the pair is rejected with <code>ignored:true</code>, because an inverted pair fires Trigger and Release on every reading in the band. <b>Moving both thresholds of a hysteresis pair at runtime:</b> send the commands in the order that keeps the pair valid at each step — for Above-mode moving both values down, <code>setrelease</code> first, then <code>settrigger</code>.
-      <br><br>
-      A blank Trigger Value in Numeric mode means <i>not set</i>: the node accumulates and reports normally but never triggers. If the dialog is saved with the release value on the <i>wrong</i> side of the trigger value, the node sanitizes it at startup — the release value is ignored (treated as same-as-trigger) and a single warning is logged to the Debug sidebar.
-      <br><br>
-      In Boolean mode, the Trigger Rule is a vote over the fresh sources: Any, Majority (&ge; half), All, or At least N. The Release Rule defaults to <i>Same as trigger</i> (release the moment the rule stops being satisfied); choosing a looser release rule — for example trigger on All, release below Majority — is the Boolean analog of hysteresis and suppresses flapping from a single flaky sensor.
-      <br><br>
-      The trigger latches: output 1 fires once per transition, stays silent while latched (the aggregate keeps flowing on output 4), and re-arms when output 2 fires.
-    </p>
-    <p><B>Sources, Freshness, and Quorum</B><br>
-      Sources are identified by <code>msg.topic</code> and learned automatically on first reading. A reading with a missing topic is rejected. Optionally list <i>Expected Sources</i> to declare the roster up front — expected sources appear in every snapshot from deploy, marked as never-seen until their first reading, which makes "sensor 3 never came back after the power cut" visible instead of silent.
-      <br><br>
-      The <i>Staleness Window</i> (<code>0</code> = disabled) is how long a source's latest value is trusted. A source that goes quiet past the window is marked stale on the node's own clock, excluded from the aggregate, and announced with <code>sourcestale</code>; its next reading marks it fresh again with <code>sourcerecovered</code>. With staleness disabled, last values are held indefinitely.
-      <br><br>
-      <i>Quorum</i> (<code>0</code> = disabled) is the minimum number of fresh sources required for trigger/release evaluation. Below quorum the aggregate is still computed and reported with <code>msg.quorum = false</code>, but the latch is not evaluated. Crossing the boundary emits <code>quorumlost</code> / <code>quorumregained</code>.
-      <br><br>
-      <i>On Quorum Lost While Latched</i> decides what a triggered node does when quorum disappears: <b>Hold</b> (default) keeps the last consensus until data returns; <b>Release</b> fails safe, releasing immediately with <code>releaseReason: "quorumlost"</code>. A dehumidifier probably holds; an alarm probably releases.
-    </p>
-    <p><B>Minority Reports (Boolean mode)</B><br>
-      When a consensus exists (quorum satisfied and the fraction not exactly split), any fresh source disagreeing with the consensus value is a minority. The <code>minorityreport</code> event fires when the minority <i>set changes</i> — a persistently stuck sensor produces one report, not a stream — including an empty set when the disagreement resolves.
-    </p>
-    <p><B>Emit aggregate on change only</B><br>
-      Checked by default. When checked, an accepted <code>reading</code> event is emitted on output 4 only if it changed the aggregate value — useful with chatty sensors. <code>sourceadded</code> and <code>sourcerecovered</code> are always emitted (they are always noteworthy), and rejected readings are always emitted (they are diagnostics; suppressing them would reintroduce silent drops).
-    </p>
-    <p><B>Heartbeat</B><br>
-      Optionally configure a <i>Heartbeat Interval</i> to produce a status snapshot on output 3 at a fixed cadence, with <code>msg.source = "internal"</code>.
-      <ul>
-        <li>Set to <code>0</code> (default) to disable</li>
-        <li>The heartbeat runs <b>continuously from deploy</b> — there is no bounded "run" to scope it to, and the node's idle problems (waiting, stale sources, lost quorum) are exactly what a watchdog wants to see</li>
-        <li>It ticks on its own fixed schedule, unaffected by any command or evaluation, and stops only when the node is closed (redeploy/restart)</li>
-        <li>After a persisted restore, it restarts fresh rather than resuming the original schedule</li>
-      </ul>
-    </p>
-    <p><B>Status label</B><br>
-      Purely cosmetic — the status text never produces an output message. Grey dot: <code>Waiting</code> with fresh/quorum counts. Green dot: the aggregate with fresh counts. Blue dot: <code>Triggered:</code> prefix. Yellow ring: <code>No quorum</code>, with a <code>Triggered |</code> prefix if the latch is held. Grey ring: <code>Disabled |</code> prefixed to the normal text. Boolean mode renders the aggregate as true/false counts, e.g. <code>2T/1F of 3</code>.
-    </p>
-    <p><B>Resume state on deploy/restart</B><br>
-      This option is <b>DISABLED</b> by default. When enabled, per-source latest values and timestamps, the learned roster, the latch, the disabled flag, and runtime overrides are written to a <code>sensorconsensus-state</code> subdirectory of <i>userDir</i> and restored on startup.
-      <ul>
-        <li>Every restored source's staleness is re-evaluated against <b>wall-clock time</b> — a long outage restores into "all sources stale, quorum lost" (firing <code>sourcestale</code> and <code>quorumlost</code> with <code>msg.source = "internal"</code>) rather than pretending old readings are fresh</li>
-        <li>Restore is <b>transition-silent</b>: it never fires Trigger or Release by itself. The first genuine transition after a restore comes from live evaluation — the next reading, staleness tick, or command. Known edge, by design: a Release-policy node restoring into quorum-lost stays latched until that first live evaluation.</li>
-        <li>A quick redeploy with everything still fresh restores with no events at all</li>
-      </ul>
-      This persistence is <b>not</b> related to Node-RED's "Persistent Context" (the contextStorage option in <code>settings.js</code>). State files are created and destroyed as needed by the node.
-    </p>
+  <p><B>General usage</B><br>
+    A sensor-fusion / consensus node. Readings from multiple sensors (keyed by <code>msg.topic</code>) are fused into a single trusted aggregate, and a trigger latches when that aggregate crosses a configured threshold. The node holds exactly one <i>latest</i> value per source — it is not a statistics/history node — and treats freshness (staleness windows), quorum, and disagreement detection as first-class features. All control commands in <code>msg.payload</code> are <b>case insensitive</b>.
+  </p>
+  <p><B>Outputs</B><br>
+    <ul>
+      <li><b>1 - Trigger</b> — fires only on a genuine <code>untriggered</code> → <code>triggered</code> transition. Never fires for a suppressed or blocked attempt.</li>
+      <li><b>2 - Release</b> — fires only on a genuine <code>triggered</code> → <code>untriggered</code> transition: the release threshold re-crossed, or quorum lost under the Release policy. Never fires for a suppressed or blocked attempt.</li>
+      <li><b>3 - Query</b> — fires in response to an incoming <code>query</code> message, or automatically on each Heartbeat tick. Always carries a full status snapshot.</li>
+      <li><b>4 - Events</b> — fires for every other event, including duplicate copies of Trigger and Release events. This is the only output where <code>msg.ignored</code> can be <code>true</code>.</li>
+    </ul>
+    Outputs 1 and 2 never carry an ignored message — anything that didn't truly happen only ever appears on output 4.
+  </p>
+  <p><B>Message properties on all outputs</B><br>
+    Every output message is a clone of the message that triggered it (or, for events with no live trigger of their own — staleness expiry, a Heartbeat tick, a restore — a clone of the most recent accepted reading's message) with the following properties added:
+    <ul>
+      <li><code>msg.consensusEvent</code> — the event type, see the list below</li>
+      <li><code>msg.consensusState</code> — <code>waiting</code>, <code>untriggered</code>, or <code>triggered</code></li>
+      <li><code>msg.aggregate</code> — the current aggregate value (the fraction of fresh sources reporting true in Boolean mode); <code>null</code> while no data</li>
+      <li><code>msg.aggregation</code> — the aggregation function actually used, e.g. <code>mean</code>, <code>trimmedmean</code>, <code>mean(fallback)</code>, <code>fraction</code></li>
+      <li><code>msg.quorum</code> — whether quorum is currently satisfied (always <code>true</code> when quorum is disabled)</li>
+      <li><code>msg.freshCount</code> / <code>msg.sourceCount</code> — fresh sources vs. all known sources</li>
+      <li><code>msg.sources</code> — per-source breakdown: <code>{ topic: { value, lastSeen, stale, seen } }</code></li>
+      <li><code>msg.disabled</code> — current disabled state as a boolean</li>
+      <li><code>msg.ignored</code> — <code>true</code> if this message was received but did not change the node's state (always <code>false</code> on outputs 1, 2, and 3)</li>
+      <li><code>msg.source</code> — <code>"external"</code> if a live incoming message triggered this event, or <code>"internal"</code> if the node itself did (staleness expiry, Heartbeat tick, restore)</li>
+    </ul>
+    Event-specific extras (<code>releaseReason</code>, <code>rejectedValue</code>, <code>staleTopic</code>, <code>recoveredTopic</code>, <code>addedTopic</code>, <code>removedTopic</code>, <code>minorityTopics</code>, <code>triggerSet</code>, <code>releaseSet</code>, <code>staleSet</code>) are added only to the relevant events — including <i>rejected</i> attempts, so a downstream consumer can see what was refused.
+    <br><br>
+    Envelopes reflect the instant of dispatch: events fire in causal order and are never re-stamped with knowledge of the later events they cause. For example, a <code>sourcestale</code> whose expiry costs the quorum still shows the pre-update <code>quorum: true</code> — the <code>quorumlost</code> that follows immediately is the correction.
+  </p>
+  <p><B>Event types (<code>msg.consensusEvent</code>)</B><br>
+    <ul>
+      <li><code>triggered</code> — the trigger latched (output 1 + 4), or a transition suppressed while disabled (output 4 only, <code>ignored:true</code>)</li>
+      <li><code>released</code> — the latch released (output 2 + 4), with <code>msg.releaseReason</code> of <code>threshold</code> or <code>quorumlost</code>; or a suppressed transition (output 4 only, <code>ignored:true</code>)</li>
+      <li><code>reading</code> — an accepted reading from a known fresh source (output 4 only; may be suppressed by <i>Emit aggregate on change only</i>), or a rejected reading — uncoercible payload or missing topic (<code>ignored:true</code>, always emitted, with <code>msg.rejectedValue</code>)</li>
+      <li><code>sourceadded</code> — first reading from a new topic (output 4 only, always emitted)</li>
+      <li><code>sourcerecovered</code> — a reading from a stale source, or a source freshened by a widened <code>setstale</code> (output 4 only, always emitted)</li>
+      <li><code>sourcestale</code> — a source aged past the staleness window (output 4 only): internally sourced on a clock expiry or restore, externally sourced when a <code>setstale</code> shrink expires it on the spot</li>
+      <li><code>sourceremoved</code> — a source dropped via the <code>remove</code> command, or an unknown-topic attempt (<code>ignored:true</code>) (output 4 only)</li>
+      <li><code>quorumlost</code> / <code>quorumregained</code> — the fresh-source count crossed the quorum boundary (output 4 only)</li>
+      <li><code>minorityreport</code> — Boolean mode: the set of fresh sources disagreeing with the consensus changed; <code>msg.minorityTopics</code> carries the new set, including an empty set when a disagreement resolves (output 4 only)</li>
+      <li><code>disabled</code> / <code>enabled</code> — transitions suppressed / re-allowed, or a redundant attempt (<code>ignored:true</code>) (output 4 only)</li>
+      <li><code>reset</code> — learned sources, values, and the latch cleared (output 4 only)</li>
+      <li><code>triggerset</code> / <code>releaseset</code> / <code>staleset</code> — a runtime threshold or staleness change, or an invalid/wrong-side attempt (<code>ignored:true</code>, attempted value included) (output 4 only)</li>
+      <li><code>query</code> — a status snapshot, requested via a <code>query</code> message or produced by a Heartbeat tick (output 3 only)</li>
+    </ul>
+    The event name always tells you what was <i>attempted</i>; <code>msg.ignored</code> tells you whether it took effect. A single incoming reading emits exactly one reading-class event — the most specific of <code>sourceadded</code> / <code>sourcerecovered</code> / <code>reading</code> — and any quorum or trigger/release transitions it causes follow as separate events, in causal order.
+  </p>
+  <p><B>Control Commands</B><br>
+    All control commands are case insensitive, and a recognized command always wins over value coercion — so a command word can never be used as a Boolean true/false value. The following commands are supported:
+    <ul>
+      <li><code>query</code> — returns a full state snapshot on output 3 without affecting the node</li>
+      <li><code>disable</code> — suppresses Trigger/Release transitions. Readings are still accepted, staleness and quorum tracking continue — only the latch is frozen. A warranted transition while disabled appears on output 4 with <code>ignored:true</code>.</li>
+      <li><code>enable</code> — re-allows transitions and immediately re-evaluates: a transition suppressed while disabled fires genuinely at that moment (outputs 1/2 + 4)</li>
+      <li><code>reset</code> — clears all learned sources, values, and the latch, returning to <code>waiting</code>. Expected sources stay on the roster as never-seen. Runtime overrides and the disabled flag survive — reset clears data, not configuration.</li>
+      <li><code>remove</code> — drops one source named in <code>msg.removetopic</code> (for a decommissioned sensor) and re-evaluates</li>
+      <li><code>settrigger</code> — sets the trigger at runtime. Numeric mode: <code>msg.settrigger</code> is a number. Boolean mode: a preset name (<code>any</code>, <code>majority</code>, <code>all</code>, <code>atleastn</code> with its count in <code>msg.settriggern</code>) or a fraction 0–1.</li>
+      <li><code>setrelease</code> — sets the release at runtime; same forms as <code>settrigger</code> plus <code>sameastrigger</code>, with <code>msg.setreleasen</code> for a count</li>
+      <li><code>setstale</code> — sets the staleness window: <code>msg.setstale</code> plus optional <code>msg.setstaleunits</code>; <code>0</code> disables staleness. Takes effect immediately in <b>both</b> directions — a shrunk window can fire <code>sourcestale</code> on the spot, a widened or disabled one can fire <code>sourcerecovered</code> for data now back inside it.</li>
+    </ul>
+    Set-commands re-evaluate the trigger immediately. Invalid or wrong-side values are surfaced solely as <code>ignored:true</code> events on output 4 with the attempted value attached — there are no debug-log warnings to watch for.
+  </p>
+  <p><B>Type Modes</B><br>
+    One node instance = one type mode = one group of like sensors. Mixing humidity readings and door contacts in a single instance has no coherent meaning — deploy one instance per group.
+    <ul>
+      <li><b>Numeric</b> — payloads are converted with <code>Number()</code>; anything unparseable is rejected. The aggregate is the configured function over the fresh sources' latest values: Mean, Median, Min, Max, or Trimmed Mean (drops the single highest and lowest; needs at least 3 fresh sources, below which it silently falls back to Mean and reports <code>mean(fallback)</code> in the envelope).</li>
+      <li><b>Boolean</b> — payloads are matched (case-insensitively, trimmed) against the True/False value lists; native <code>true</code>/<code>false</code> and <code>1</code>/<code>0</code> always coerce. Anything matching neither list is rejected. The default lists are <code>true, on, yes, 1</code> and <code>false, off, no, 0</code>; entering custom lists <i>replaces</i> the defaults (e.g. <code>open</code> / <code>closed</code> for door contacts). The aggregate is the fraction of fresh sources reporting true (0.0–1.0).</li>
+    </ul>
+  </p>
+  <p><B>Trigger and Release</B><br>
+    In Numeric mode, <i>Trigger When</i> selects the direction: trigger when the aggregate rises to or above the Trigger Value, or falls to or below it. The Release Value sits on the opposite side and provides hysteresis; release uses strict inequality past it (Above-mode releases when the aggregate drops <i>below</i> the release value), so with no hysteresis an aggregate sitting exactly on the threshold stays latched instead of flapping.
+    <br><br>
+    Leaving the Release Value blank means <b>same as trigger</b>, and this follows dynamically: a runtime <code>settrigger</code> moves both thresholds together. Once a <i>distinct</i> release exists (configured, or set via <code>setrelease</code>), <code>settrigger</code> and <code>setrelease</code> guard each other symmetrically — a value that would invert the pair is rejected with <code>ignored:true</code>, because an inverted pair fires Trigger and Release on every reading in the band. <b>Moving both thresholds of a hysteresis pair at runtime:</b> send the commands in the order that keeps the pair valid at each step — for Above-mode moving both values down, <code>setrelease</code> first, then <code>settrigger</code>.
+    <br><br>
+    A blank Trigger Value in Numeric mode means <i>not set</i>: the node accumulates and reports normally but never triggers. If the dialog is saved with the release value on the <i>wrong</i> side of the trigger value, the node sanitizes it at startup — the release value is ignored (treated as same-as-trigger) and a single warning is logged to the Debug sidebar.
+    <br><br>
+    In Boolean mode, the Trigger Rule is a vote over the fresh sources: Any, Majority (&ge; half), All, or At least N. The Release Rule defaults to <i>Same as trigger</i> (release the moment the rule stops being satisfied); choosing a looser release rule — for example trigger on All, release below Majority — is the Boolean analog of hysteresis and suppresses flapping from a single flaky sensor.
+    <br><br>
+    The trigger latches: output 1 fires once per transition, stays silent while latched (the aggregate keeps flowing on output 4), and re-arms when output 2 fires.
+  </p>
+  <p><B>Sources, Freshness, and Quorum</B><br>
+    Sources are identified by <code>msg.topic</code> and learned automatically on first reading. A reading with a missing topic is rejected. Optionally list <i>Expected Sources</i> to declare the roster up front — expected sources appear in every snapshot from deploy, marked as never-seen until their first reading, which makes "sensor 3 never came back after the power cut" visible instead of silent.
+    <br><br>
+    The <i>Staleness Window</i> (<code>0</code> = disabled) is how long a source's latest value is trusted. A source that goes quiet past the window is marked stale on the node's own clock, excluded from the aggregate, and announced with <code>sourcestale</code>; its next reading marks it fresh again with <code>sourcerecovered</code>. With staleness disabled, last values are held indefinitely.
+    <br><br>
+    <i>Quorum</i> (<code>0</code> = disabled) is the minimum number of fresh sources required for trigger/release evaluation. Below quorum the aggregate is still computed and reported with <code>msg.quorum = false</code>, but the latch is not evaluated. Crossing the boundary emits <code>quorumlost</code> / <code>quorumregained</code>.
+    <br><br>
+    <i>On Quorum Lost While Latched</i> decides what a triggered node does when quorum disappears: <b>Hold</b> (default) keeps the last consensus until data returns; <b>Release</b> fails safe, releasing immediately with <code>releaseReason: "quorumlost"</code>. A dehumidifier probably holds; an alarm probably releases.
+  </p>
+  <p><B>Minority Reports (Boolean mode)</B><br>
+    When a consensus exists (quorum satisfied and the fraction not exactly split), any fresh source disagreeing with the consensus value is a minority. The <code>minorityreport</code> event fires when the minority <i>set changes</i> — a persistently stuck sensor produces one report, not a stream — including an empty set when the disagreement resolves.
+  </p>
+  <p><B>Emit aggregate on change only</B><br>
+    Checked by default. When checked, an accepted <code>reading</code> event is emitted on output 4 only if it changed the aggregate value — useful with chatty sensors. <code>sourceadded</code> and <code>sourcerecovered</code> are always emitted (they are always noteworthy), and rejected readings are always emitted (they are diagnostics; suppressing them would reintroduce silent drops).
+  </p>
+  <p><B>Heartbeat</B><br>
+    Optionally configure a <i>Heartbeat Interval</i> to produce a status snapshot on output 3 at a fixed cadence, with <code>msg.source = "internal"</code>.
+    <ul>
+      <li>Set to <code>0</code> (default) to disable</li>
+      <li>The heartbeat runs <b>continuously from deploy</b> — there is no bounded "run" to scope it to, and the node's idle problems (waiting, stale sources, lost quorum) are exactly what a watchdog wants to see</li>
+      <li>It ticks on its own fixed schedule, unaffected by any command or evaluation, and stops only when the node is closed (redeploy/restart)</li>
+      <li>After a persisted restore, it restarts fresh rather than resuming the original schedule</li>
+    </ul>
+  </p>
+  <p><B>Status label</B><br>
+    Purely cosmetic — the status text never produces an output message. Grey dot: <code>Waiting</code> with fresh/quorum counts. Green dot: the aggregate with fresh counts. Blue dot: <code>Triggered:</code> prefix. Yellow ring: <code>No quorum</code>, with a <code>Triggered |</code> prefix if the latch is held. Grey ring: <code>Disabled |</code> prefixed to the normal text. Boolean mode renders the aggregate as true/false counts, e.g. <code>2T/1F of 3</code>.
+  </p>
+  <p><B>Resume state on deploy/restart</B><br>
+    This option is <b>DISABLED</b> by default. When enabled, per-source latest values and timestamps, the learned roster, the latch, the disabled flag, and runtime overrides are written to a <code>sensorconsensus-state</code> subdirectory of <i>userDir</i> and restored on startup.
+    <ul>
+      <li>Every restored source's staleness is re-evaluated against <b>wall-clock time</b> — a long outage restores into "all sources stale, quorum lost" (firing <code>sourcestale</code> and <code>quorumlost</code> with <code>msg.source = "internal"</code>) rather than pretending old readings are fresh</li>
+      <li>Restore is <b>transition-silent</b>: it never fires Trigger or Release by itself. The first genuine transition after a restore comes from live evaluation — the next reading, staleness tick, or command. Known edge, by design: a Release-policy node restoring into quorum-lost stays latched until that first live evaluation.</li>
+      <li>A quick redeploy with everything still fresh restores with no events at all</li>
+    </ul>
+    This persistence is <b>not</b> related to Node-RED's "Persistent Context" (the contextStorage option in <code>settings.js</code>). State files are created and destroyed as needed by the node.
+  </p>
 </script>

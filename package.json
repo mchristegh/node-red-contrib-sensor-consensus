@@ -33,12 +33,23 @@
   },
   "scripts": {
     "test": "node test-scripts/test-harness.js",
-    "prepublishOnly": "node test-scripts/test-harness.js"
+    "prepublishOnly": "node test-scripts/test-harness.js",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "node-red": {
     "version": ">=2.0.0",
     "nodes": {
       "sensor-consensus": "sensor-consensus/sensor-consensus.js"
     }
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.7.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-html": "^8.1.4",
+    "globals": "^17.7.0",
+    "prettier": "^3.9.5"
   }
 }

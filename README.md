@@ -16,9 +16,9 @@ node makes every one of those decisions observable.
 
 ## Highlights
 
-- **Two type modes** (per node instance): *Numeric* — mean, median,
+- **Two type modes** (per node instance): _Numeric_ — mean, median,
   min, max, or trimmed mean over the latest value from each source —
-  or *Boolean* — vote rules (Any / Majority / All / At least N) over
+  or _Boolean_ — vote rules (Any / Majority / All / At least N) over
   the fraction of sources reporting true, with configurable true/false
   value lists.
 - **Trust built in**: per-source staleness windows, fresh-source

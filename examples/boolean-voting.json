@@ -1,336 +1,291 @@
 [
-    {
-        "id": "c-000t",
-        "type": "comment",
-        "name": "Boolean voting with custom value lists",
-        "info": "Three door contacts reporting the strings `open` / `closed`, mapped to true/false via the node's custom *True Values* / *False Values* lists. The trigger rule is **Majority open**; the aggregate is the fraction of fresh sensors reporting true.\n\n**Try this sequence:**\n1. Press door1 open — 1 of 1 open is a majority: **Trigger** fires immediately.\n2. Press door2 closed — exactly half (0.5) still satisfies Majority (≥ 0.5): the latch holds.\n3. Press door3 closed — 1 of 3: **Release** fires, and output 4 carries a `minorityreport` naming `[\"door1\"]` as the sensor disagreeing with the new consensus. The report fires only when the disagreeing set *changes* — a stuck sensor produces one report, not a stream.\n4. Press door1 closed — the disagreement resolves: one final `minorityreport` with an empty set.\n5. Press \"door1 sends 'true'\" — rejected (`reading` with `ignored: true`): custom lists *replace* the defaults, so only `open`/`closed` coerce.\n\nFor flap suppression, reconfigure the Release Rule looser than the trigger (e.g. trigger on All, release below Majority) — the boolean analog of hysteresis.",
-        "x": 150,
-        "y": 120,
-        "wires": []
-    },
-    {
-        "id": "i-000u",
-        "type": "inject",
-        "name": "door1 open",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "door1",
-        "payload": "open",
-        "payloadType": "str",
-        "x": 170,
-        "y": 200,
-        "wires": [
-            [
-                "sc-000s"
-            ]
-        ]
-    },
-    {
-        "id": "i-000v",
-        "type": "inject",
-        "name": "door2 open",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "door2",
-        "payload": "open",
-        "payloadType": "str",
-        "x": 170,
-        "y": 260,
-        "wires": [
-            [
-                "sc-000s"
-            ]
-        ]
-    },
-    {
-        "id": "i-000w",
-        "type": "inject",
-        "name": "door3 open",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "door3",
-        "payload": "open",
-        "payloadType": "str",
-        "x": 170,
-        "y": 320,
-        "wires": [
-            [
-                "sc-000s"
-            ]
-        ]
-    },
-    {
-        "id": "i-000x",
-        "type": "inject",
-        "name": "door1 closed",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "door1",
-        "payload": "closed",
-        "payloadType": "str",
-        "x": 170,
-        "y": 380,
-        "wires": [
-            [
-                "sc-000s"
-            ]
-        ]
-    },
-    {
-        "id": "i-000y",
-        "type": "inject",
-        "name": "door2 closed",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "door2",
-        "payload": "closed",
-        "payloadType": "str",
-        "x": 170,
-        "y": 440,
-        "wires": [
-            [
-                "sc-000s"
-            ]
-        ]
-    },
-    {
-        "id": "i-000z",
-        "type": "inject",
-        "name": "door3 closed",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "door3",
-        "payload": "closed",
-        "payloadType": "str",
-        "x": 170,
-        "y": 500,
-        "wires": [
-            [
-                "sc-000s"
-            ]
-        ]
-    },
-    {
-        "id": "i-0010",
-        "type": "inject",
-        "name": "door1 sends 'true' (rejected)",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "door1",
-        "payload": "true",
-        "payloadType": "str",
-        "x": 170,
-        "y": 560,
-        "wires": [
-            [
-                "sc-000s"
-            ]
-        ]
-    },
-    {
-        "id": "i-0011",
-        "type": "inject",
-        "name": "query",
-        "props": [
-            {
-                "p": "payload"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "query",
-        "payloadType": "str",
-        "x": 170,
-        "y": 620,
-        "wires": [
-            [
-                "sc-000s"
-            ]
-        ]
-    },
-    {
-        "id": "sc-000s",
-        "type": "sensor-consensus",
-        "name": "Door consensus (majority open)",
-        "typemode": "boolean",
-        "aggregation": "mean",
-        "triggerdir": "above",
-        "triggervalue": "",
-        "releasevalue": "",
-        "boolrule": "majority",
-        "boolrulen": "1",
-        "boolreleaserule": "sameastrigger",
-        "boolreleasen": "1",
-        "truevalues": "open",
-        "falsevalues": "closed",
-        "expectedsources": "",
-        "quorum": "0",
-        "stalewindow": "0",
-        "stalewindowunits": "Second",
-        "quorumlostpolicy": "hold",
-        "emitonchange": true,
-        "heartbeatinterval": "0",
-        "heartbeatintervalunits": "Second",
-        "persist": false,
-        "x": 490,
-        "y": 290,
-        "wires": [
-            [
-                "d-000o"
-            ],
-            [
-                "d-000p"
-            ],
-            [
-                "d-000q"
-            ],
-            [
-                "d-000r"
-            ]
-        ]
-    },
-    {
-        "id": "d-000o",
-        "type": "debug",
-        "name": "1 Trigger",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 790,
-        "y": 200,
-        "wires": []
-    },
-    {
-        "id": "d-000p",
-        "type": "debug",
-        "name": "2 Release",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 790,
-        "y": 260,
-        "wires": []
-    },
-    {
-        "id": "d-000q",
-        "type": "debug",
-        "name": "3 Query",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 790,
-        "y": 320,
-        "wires": []
-    },
-    {
-        "id": "d-000r",
-        "type": "debug",
-        "name": "4 Events",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 790,
-        "y": 380,
-        "wires": []
-    }
+  {
+    "id": "c-000t",
+    "type": "comment",
+    "name": "Boolean voting with custom value lists",
+    "info": "Three door contacts reporting the strings `open` / `closed`, mapped to true/false via the node's custom *True Values* / *False Values* lists. The trigger rule is **Majority open**; the aggregate is the fraction of fresh sensors reporting true.\n\n**Try this sequence:**\n1. Press door1 open — 1 of 1 open is a majority: **Trigger** fires immediately.\n2. Press door2 closed — exactly half (0.5) still satisfies Majority (≥ 0.5): the latch holds.\n3. Press door3 closed — 1 of 3: **Release** fires, and output 4 carries a `minorityreport` naming `[\"door1\"]` as the sensor disagreeing with the new consensus. The report fires only when the disagreeing set *changes* — a stuck sensor produces one report, not a stream.\n4. Press door1 closed — the disagreement resolves: one final `minorityreport` with an empty set.\n5. Press \"door1 sends 'true'\" — rejected (`reading` with `ignored: true`): custom lists *replace* the defaults, so only `open`/`closed` coerce.\n\nFor flap suppression, reconfigure the Release Rule looser than the trigger (e.g. trigger on All, release below Majority) — the boolean analog of hysteresis.",
+    "x": 150,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "i-000u",
+    "type": "inject",
+    "name": "door1 open",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "door1",
+    "payload": "open",
+    "payloadType": "str",
+    "x": 170,
+    "y": 200,
+    "wires": [["sc-000s"]]
+  },
+  {
+    "id": "i-000v",
+    "type": "inject",
+    "name": "door2 open",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "door2",
+    "payload": "open",
+    "payloadType": "str",
+    "x": 170,
+    "y": 260,
+    "wires": [["sc-000s"]]
+  },
+  {
+    "id": "i-000w",
+    "type": "inject",
+    "name": "door3 open",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "door3",
+    "payload": "open",
+    "payloadType": "str",
+    "x": 170,
+    "y": 320,
+    "wires": [["sc-000s"]]
+  },
+  {
+    "id": "i-000x",
+    "type": "inject",
+    "name": "door1 closed",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "door1",
+    "payload": "closed",
+    "payloadType": "str",
+    "x": 170,
+    "y": 380,
+    "wires": [["sc-000s"]]
+  },
+  {
+    "id": "i-000y",
+    "type": "inject",
+    "name": "door2 closed",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "door2",
+    "payload": "closed",
+    "payloadType": "str",
+    "x": 170,
+    "y": 440,
+    "wires": [["sc-000s"]]
+  },
+  {
+    "id": "i-000z",
+    "type": "inject",
+    "name": "door3 closed",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "door3",
+    "payload": "closed",
+    "payloadType": "str",
+    "x": 170,
+    "y": 500,
+    "wires": [["sc-000s"]]
+  },
+  {
+    "id": "i-0010",
+    "type": "inject",
+    "name": "door1 sends 'true' (rejected)",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "door1",
+    "payload": "true",
+    "payloadType": "str",
+    "x": 170,
+    "y": 560,
+    "wires": [["sc-000s"]]
+  },
+  {
+    "id": "i-0011",
+    "type": "inject",
+    "name": "query",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "query",
+    "payloadType": "str",
+    "x": 170,
+    "y": 620,
+    "wires": [["sc-000s"]]
+  },
+  {
+    "id": "sc-000s",
+    "type": "sensor-consensus",
+    "name": "Door consensus (majority open)",
+    "typemode": "boolean",
+    "aggregation": "mean",
+    "triggerdir": "above",
+    "triggervalue": "",
+    "releasevalue": "",
+    "boolrule": "majority",
+    "boolrulen": "1",
+    "boolreleaserule": "sameastrigger",
+    "boolreleasen": "1",
+    "truevalues": "open",
+    "falsevalues": "closed",
+    "expectedsources": "",
+    "quorum": "0",
+    "stalewindow": "0",
+    "stalewindowunits": "Second",
+    "quorumlostpolicy": "hold",
+    "emitonchange": true,
+    "heartbeatinterval": "0",
+    "heartbeatintervalunits": "Second",
+    "persist": false,
+    "x": 490,
+    "y": 290,
+    "wires": [["d-000o"], ["d-000p"], ["d-000q"], ["d-000r"]]
+  },
+  {
+    "id": "d-000o",
+    "type": "debug",
+    "name": "1 Trigger",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 790,
+    "y": 200,
+    "wires": []
+  },
+  {
+    "id": "d-000p",
+    "type": "debug",
+    "name": "2 Release",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 790,
+    "y": 260,
+    "wires": []
+  },
+  {
+    "id": "d-000q",
+    "type": "debug",
+    "name": "3 Query",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 790,
+    "y": 320,
+    "wires": []
+  },
+  {
+    "id": "d-000r",
+    "type": "debug",
+    "name": "4 Events",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 790,
+    "y": 380,
+    "wires": []
+  }
 ]
